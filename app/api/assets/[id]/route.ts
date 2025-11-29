@@ -8,10 +8,11 @@ const mockAssets: Asset[] = []
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const asset = mockAssets.find((a) => a.id === params.id)
+    const { id } = await params
+    const asset = mockAssets.find((a) => a.id === id)
 
     if (!asset) {
       return NextResponse.json(
@@ -34,11 +35,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
-    const assetIndex = mockAssets.findIndex((a) => a.id === params.id)
+    const assetIndex = mockAssets.findIndex((a) => a.id === id)
 
     if (assetIndex === -1) {
       return NextResponse.json(
@@ -70,10 +72,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const assetIndex = mockAssets.findIndex((a) => a.id === params.id)
+    const { id } = await params
+    const assetIndex = mockAssets.findIndex((a) => a.id === id)
 
     if (assetIndex === -1) {
       return NextResponse.json(
