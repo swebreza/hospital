@@ -2,7 +2,7 @@
 // This is a placeholder - actual implementation will connect to database
 
 import { NextRequest, NextResponse } from 'next/server'
-import type { ApiResponse, PaginatedResponse, Asset } from '@/lib/types'
+import type { PaginatedResponse, Asset } from '@/lib/types'
 
 // Mock data - replace with actual database queries
 const mockAssets: Asset[] = []
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(response)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch assets' },
       { status: 500 }
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: newAsset,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to create asset' },
       { status: 500 }

@@ -3,7 +3,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number, public data?: any) {
+  constructor(message: string, public status: number, public data?: unknown) {
     super(message)
     this.name = 'ApiError'
   }
@@ -48,7 +48,7 @@ export async function apiGet<T>(
 
 export async function apiPost<T>(
   endpoint: string,
-  data?: any,
+  data?: unknown,
   options?: RequestInit
 ): Promise<T> {
   const token =
@@ -70,7 +70,7 @@ export async function apiPost<T>(
 
 export async function apiPut<T>(
   endpoint: string,
-  data?: any,
+  data?: unknown,
   options?: RequestInit
 ): Promise<T> {
   const token =

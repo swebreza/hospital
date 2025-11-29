@@ -48,6 +48,7 @@ export default function AssetGridView({
             {/* Asset Image/Icon */}
             <div className='w-full h-40 bg-[var(--bg-tertiary)] rounded-lg mb-4 flex items-center justify-center overflow-hidden'>
               {asset.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={asset.image}
                   alt={asset.name}
@@ -70,7 +71,17 @@ export default function AssetGridView({
               </div>
 
               <div className='flex items-center justify-between'>
-                <Badge variant={getStatusVariant(asset.status) as any}>
+                <Badge
+                  variant={
+                    getStatusVariant(asset.status) as
+                      | 'default'
+                      | 'success'
+                      | 'danger'
+                      | 'warning'
+                      | 'info'
+                      | 'primary'
+                  }
+                >
                   {asset.status}
                 </Badge>
                 {asset.qrCode && (

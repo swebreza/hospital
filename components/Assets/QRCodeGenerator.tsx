@@ -15,9 +15,11 @@ interface QRCodeGeneratorProps {
 export default function QRCodeGenerator({
   value,
   assetName,
-  size = 200,
+  size: _size = 200, // Will be used when QR code generation is implemented
   showDownload = true,
 }: QRCodeGeneratorProps) {
+  // Size parameter will be used when implementing QR code generation
+  void _size
   const downloadQR = () => {
     const svg = document.getElementById('qr-code-svg')
     if (!svg) return

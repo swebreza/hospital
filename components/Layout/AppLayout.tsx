@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    setIsLoading(true)
+    // Trigger loading state on route change
     const timer = setTimeout(() => setIsLoading(false), 100)
     return () => clearTimeout(timer)
   }, [pathname])

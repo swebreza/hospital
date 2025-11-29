@@ -290,7 +290,7 @@ export interface FilterOptions {
   department?: string
   dateFrom?: string
   dateTo?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface SortOptions {

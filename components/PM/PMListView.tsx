@@ -9,7 +9,7 @@ import {
   XCircle,
   Calendar,
 } from 'lucide-react'
-import { useStore } from '@/lib/store'
+// import { useStore } from '@/lib/store' // Not used yet
 import Badge from '@/components/ui/Badge'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'

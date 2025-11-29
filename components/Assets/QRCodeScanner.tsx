@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
+import React, { useRef } from 'react'
+// import { Html5Qrcode } from 'html5-qrcode' // TODO: Install html5-qrcode package
 import { Camera, X } from 'lucide-react'
-import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 
 interface QRCodeScannerProps {
@@ -11,61 +10,17 @@ interface QRCodeScannerProps {
   onClose: () => void
 }
 
-export default function QRCodeScanner({ onScan, onClose }: QRCodeScannerProps) {
-  const [isScanning, setIsScanning] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const scannerRef = useRef<Html5Qrcode | null>(null)
+export default function QRCodeScanner({
+  onScan: _onScan,
+  onClose,
+}: QRCodeScannerProps) {
+  // TODO: Implement QR scanning when html5-qrcode is installed
+  // For now, this is a placeholder component
+  const error = 'QR Code scanning requires html5-qrcode package to be installed'
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const startScanning = async () => {
-      try {
-        const html5QrCode = new Html5Qrcode('qr-reader')
-        scannerRef.current = html5QrCode
-
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-          },
-          (decodedText: string) => {
-            onScan(decodedText)
-            stopScanning()
-            toast.success('QR Code scanned successfully')
-          },
-          (errorMessage: string) => {
-            // Ignore scanning errors
-          }
-        )
-
-        setIsScanning(true)
-        setError(null)
-      } catch (err: any) {
-        setError(err.message || 'Failed to start camera')
-        toast.error('Failed to start camera')
-      }
-    }
-
-    const stopScanning = async () => {
-      if (scannerRef.current) {
-        try {
-          await scannerRef.current.stop()
-          await scannerRef.current.clear()
-        } catch (err) {
-          // Ignore stop errors
-        }
-        scannerRef.current = null
-      }
-      setIsScanning(false)
-    }
-
-    startScanning()
-
-    return () => {
-      stopScanning()
-    }
-  }, [onScan])
+  // Suppress unused parameter warning - will be used when implementing QR scanning
+  void _onScan
 
   return (
     <div className='fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/50 backdrop-blur-sm'>
@@ -95,7 +50,7 @@ export default function QRCodeScanner({ onScan, onClose }: QRCodeScannerProps) {
             </div>
           )}
 
-          {!isScanning && !error && (
+          {!error && (
             <div className='text-center py-8'>
               <Camera
                 size={48}

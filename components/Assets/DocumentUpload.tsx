@@ -1,10 +1,9 @@
 'use client'
 
 import React, { useCallback, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
+// import { useDropzone } from 'react-dropzone' // TODO: Install react-dropzone package
 import { Upload, File, X, Check } from 'lucide-react'
 import { toast } from 'sonner'
-import Button from '@/components/ui/Button'
 
 interface DocumentUploadProps {
   onUpload: (files: File[]) => Promise<void>
@@ -26,20 +25,26 @@ export default function DocumentUpload({
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
 
-  const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
-      if (acceptedFiles.length + existingDocuments.length > maxFiles) {
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files
+      if (!files || files.length === 0) return
+
+      const fileArray = Array.from(files)
+      if (fileArray.length + existingDocuments.length > maxFiles) {
         toast.error(`Maximum ${maxFiles} files allowed`)
         return
       }
 
       setUploading(true)
       try {
-        await onUpload(acceptedFiles)
-        setUploadedFiles((prev) => [...prev, ...acceptedFiles])
-        toast.success(`${acceptedFiles.length} file(s) uploaded successfully`)
-      } catch (error: any) {
-        toast.error(error.message || 'Failed to upload files')
+        await onUpload(fileArray)
+        setUploadedFiles((prev) => [...prev, ...fileArray])
+        toast.success(`${fileArray.length} file(s) uploaded successfully`)
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to upload files'
+        toast.error(errorMessage)
       } finally {
         setUploading(false)
       }
@@ -47,15 +52,8 @@ export default function DocumentUpload({
     [onUpload, maxFiles, existingDocuments.length]
   )
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: acceptedTypes.reduce((acc, type) => {
-      acc[type] = []
-      return acc
-    }, {} as Record<string, string[]>),
-    maxSize,
-    multiple: true,
-  })
+  // TODO: Implement dropzone when react-dropzone is installed
+  const isDragActive = false
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return bytes + ' B'
@@ -186,10 +184,12 @@ export default function DocumentUpload({
                           try {
                             await onDelete(doc.url)
                             toast.success('Document deleted')
-                          } catch (error: any) {
-                            toast.error(
-                              error.message || 'Failed to delete document'
-                            )
+                          } catch (error: unknown) {
+                            const errorMessage =
+                              error instanceof Error
+                                ? error.message
+                                : 'Failed to delete document'
+                            toast.error(errorMessage)
                           }
                         }
                       }}

@@ -132,7 +132,9 @@ export default function Sidebar() {
                         : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
                     }`}
                   >
-                    <item.icon size={20} className='flex-shrink-0' />
+                    <div className='flex-shrink-0'>
+                      <item.icon size={20} />
+                    </div>
                     {!isCollapsed && (
                       <>
                         <span className='flex-1 text-left'>{item.name}</span>
@@ -141,12 +143,13 @@ export default function Sidebar() {
                             {item.badge}
                           </span>
                         )}
-                        <ChevronDown
-                          size={16}
+                        <div
                           className={`transition-transform flex-shrink-0 ${
                             isExpanded ? 'rotate-180' : ''
                           }`}
-                        />
+                        >
+                          <ChevronDown size={16} />
+                        </div>
                       </>
                     )}
                   </button>
@@ -160,7 +163,9 @@ export default function Sidebar() {
                         : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
                     }`}
                   >
-                    <item.icon size={20} className='flex-shrink-0' />
+                    <div className='flex-shrink-0'>
+                      <item.icon size={20} />
+                    </div>
                     {!isCollapsed && (
                       <>
                         <span className='flex-1'>{item.name}</span>

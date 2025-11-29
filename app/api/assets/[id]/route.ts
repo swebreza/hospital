@@ -1,7 +1,7 @@
 // API route handler for individual asset operations
 
 import { NextRequest, NextResponse } from 'next/server'
-import type { ApiResponse, Asset } from '@/lib/types'
+import type { Asset } from '@/lib/types'
 
 // Mock data - replace with actual database queries
 const mockAssets: Asset[] = []
@@ -24,7 +24,7 @@ export async function GET(
       success: true,
       data: asset,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch asset' },
       { status: 500 }
@@ -60,7 +60,7 @@ export async function PUT(
       success: true,
       data: updatedAsset,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to update asset' },
       { status: 500 }
@@ -88,7 +88,7 @@ export async function DELETE(
       success: true,
       message: 'Asset deleted successfully',
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to delete asset' },
       { status: 500 }

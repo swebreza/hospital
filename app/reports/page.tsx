@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
-import Select from '@/components/ui/Select'
+// import Select from '@/components/ui/Select' // Not used yet
 import EmptyState from '@/components/ui/EmptyState'
 
 const reportTemplates = [
@@ -77,9 +77,11 @@ export default function ReportsPage() {
     // TODO: Implement report generation
   }
 
-  const handleExport = (format: 'pdf' | 'excel') => {
+  const handleExport = (_format: 'pdf' | 'excel') => {
     if (!selectedReport) return
     // TODO: Implement export
+    // Format parameter will be used when implementing export functionality
+    void _format
   }
 
   return (
