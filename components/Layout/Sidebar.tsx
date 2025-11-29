@@ -83,16 +83,16 @@ export default function Sidebar() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className='p-6 flex items-center gap-3 border-b border-[var(--border-color)]'>
-        <div className='w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white flex-shrink-0'>
+      <div className='p-6 flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary-lighter to-transparent'>
+        <div className='w-12 h-12 bg-gradient-to-br from-primary to-info rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-md'>
           <Activity size={24} />
         </div>
         {!isCollapsed && (
           <div className='flex-1 min-w-0'>
-            <div className='font-bold text-lg text-[var(--primary)] truncate'>
+            <div className='font-bold text-xl text-primary truncate'>
               BME-AMS
             </div>
-            <div className='text-xs text-[var(--text-secondary)] truncate'>
+            <div className='text-xs text-text-secondary truncate font-medium'>
               Cybrox Solutions
             </div>
           </div>
@@ -100,12 +100,12 @@ export default function Sidebar() {
         {!isMobile && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className='p-1.5 hover:bg-[var(--bg-hover)] rounded-md transition-colors ml-auto flex-shrink-0'
+            className='p-2 hover:bg-bg-hover rounded-lg transition-all ml-auto flex-shrink-0 hover:scale-110'
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <ChevronLeft
               size={18}
-              className={`text-[var(--text-secondary)] transition-transform ${
+              className={`text-text-secondary transition-transform ${
                 isCollapsed ? 'rotate-180' : ''
               }`}
             />
@@ -114,8 +114,8 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className='flex-1 p-4 overflow-y-auto'>
-        <ul className='flex flex-col gap-1'>
+      <nav className='flex-1 p-4 overflow-y-auto scrollbar-thin'>
+        <ul className='flex flex-col gap-1.5'>
           {menuItems.map((item) => {
             const active = isActive(item.href)
             const hasSubmenu = item.submenu && item.submenu.length > 0
@@ -126,10 +126,10 @@ export default function Sidebar() {
                 {hasSubmenu ? (
                   <button
                     onClick={() => toggleSubmenu(item.name)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium relative ${
                       active
-                        ? 'bg-[var(--primary-light)] text-[var(--primary)]'
-                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                        ? 'bg-gradient-to-r from-primary-light to-transparent text-primary shadow-sm'
+                        : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                     }`}
                   >
                     <div className='flex-shrink-0'>
@@ -139,7 +139,7 @@ export default function Sidebar() {
                       <>
                         <span className='flex-1 text-left'>{item.name}</span>
                         {item.badge && (
-                          <span className='px-2 py-0.5 bg-[var(--danger)] text-white text-xs font-bold rounded-full'>
+                          <span className='px-2 py-0.5 bg-danger text-white text-xs font-bold rounded-full'>
                             {item.badge}
                           </span>
                         )}
@@ -157,10 +157,10 @@ export default function Sidebar() {
                   <Link
                     href={item.href}
                     onClick={() => isMobile && setIsMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium relative ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium relative group ${
                       active
-                        ? 'bg-[var(--primary-light)] text-[var(--primary)]'
-                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                        ? 'bg-gradient-to-r from-primary-light to-transparent text-primary shadow-sm'
+                        : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                     }`}
                   >
                     <div className='flex-shrink-0'>
@@ -170,14 +170,14 @@ export default function Sidebar() {
                       <>
                         <span className='flex-1'>{item.name}</span>
                         {item.badge && (
-                          <span className='px-2 py-0.5 bg-[var(--danger)] text-white text-xs font-bold rounded-full'>
+                          <span className='px-2 py-0.5 bg-danger text-white text-xs font-bold rounded-full'>
                             {item.badge}
                           </span>
                         )}
                       </>
                     )}
                     {active && !isCollapsed && (
-                      <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--primary)] rounded-r-full' />
+                      <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-primary to-info rounded-r-full shadow-sm' />
                     )}
                   </Link>
                 )}
@@ -198,8 +198,8 @@ export default function Sidebar() {
                             onClick={() => isMobile && setIsMobileOpen(false)}
                             className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                               pathname === subItem.href
-                                ? 'bg-[var(--primary-light)] text-[var(--primary)] font-medium'
-                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                                ? 'bg-primary-light text-primary font-medium'
+                                : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                             }`}
                           >
                             {subItem.name}
@@ -224,17 +224,17 @@ export default function Sidebar() {
       </nav>
 
       {/* User Profile */}
-      <div className='p-4 border-t border-[var(--border-color)]'>
+      <div className='p-4 border-t border-border bg-gradient-to-r from-bg-secondary to-transparent'>
         <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-semibold flex-shrink-0'>
+          <div className='w-11 h-11 rounded-full bg-gradient-to-br from-primary to-info text-white flex items-center justify-center font-semibold flex-shrink-0 shadow-md ring-2 ring-white/50'>
             JD
           </div>
           {!isCollapsed && (
             <div className='flex-1 min-w-0'>
-              <div className='text-sm font-bold text-[var(--text-primary)] truncate'>
+              <div className='text-sm font-bold text-text-primary truncate'>
                 John Doe
               </div>
-              <div className='text-xs text-[var(--text-secondary)] truncate'>
+              <div className='text-xs text-text-secondary truncate font-medium'>
                 Biomedical Eng.
               </div>
             </div>
@@ -250,7 +250,7 @@ export default function Sidebar() {
       {isMobile && (
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className='fixed top-4 left-4 z-[var(--z-fixed)] p-2 bg-white rounded-lg shadow-md border border-[var(--border-color)] lg:hidden'
+          className='fixed top-4 left-4 z-fixed p-2 bg-white rounded-lg shadow-md border border-border lg:hidden hover:bg-bg-hover transition-colors'
           aria-label='Toggle menu'
         >
           {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -259,7 +259,7 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`glass-panel fixed left-0 top-0 h-full flex flex-col border-r border-[var(--border-color)] bg-white transition-all z-[var(--z-fixed)] ${
+        className={`fixed left-0 top-0 h-full flex flex-col border-r border-border bg-white/98 backdrop-blur-xl transition-all duration-300 z-fixed shadow-xl ${
           isMobile
             ? `${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} w-64`
             : `${isCollapsed ? 'w-20' : 'w-64'}`
@@ -271,7 +271,7 @@ export default function Sidebar() {
       {/* Mobile Overlay */}
       {isMobile && isMobileOpen && (
         <div
-          className='fixed inset-0 bg-black/50 z-[var(--z-modal-backdrop)] lg:hidden'
+          className='fixed inset-0 bg-black/50 z-modal-backdrop lg:hidden'
           onClick={() => setIsMobileOpen(false)}
         />
       )}

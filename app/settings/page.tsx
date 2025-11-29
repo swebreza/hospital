@@ -19,6 +19,7 @@ const settingsTabs = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('users')
+  const [timezone, setTimezone] = useState('IST')
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -26,13 +27,13 @@ export default function SettingsPage() {
         return (
           <div className='space-y-6'>
             <div className='flex items-center justify-between'>
-              <h2 className='text-xl font-semibold text-[var(--text-primary)]'>
+              <h2 className='text-xl font-semibold text-text-primary'>
                 User Management
               </h2>
               <Button variant='primary'>Add User</Button>
             </div>
             <Card padding='md'>
-              <p className='text-[var(--text-secondary)]'>
+              <p className='text-text-secondary'>
                 User management interface coming soon
               </p>
             </Card>
@@ -41,17 +42,17 @@ export default function SettingsPage() {
       case 'notifications':
         return (
           <div className='space-y-6'>
-            <h2 className='text-xl font-semibold text-[var(--text-primary)]'>
+            <h2 className='text-xl font-semibold text-text-primary'>
               Notification Settings
             </h2>
             <Card padding='md'>
               <div className='space-y-4'>
                 <div className='flex items-center justify-between'>
                   <div>
-                    <p className='font-medium text-[var(--text-primary)]'>
+                    <p className='font-medium text-text-primary'>
                       Email Notifications
                     </p>
-                    <p className='text-sm text-[var(--text-secondary)]'>
+                    <p className='text-sm text-text-secondary'>
                       Receive email alerts for important events
                     </p>
                   </div>
@@ -59,10 +60,10 @@ export default function SettingsPage() {
                 </div>
                 <div className='flex items-center justify-between'>
                   <div>
-                    <p className='font-medium text-[var(--text-primary)]'>
+                    <p className='font-medium text-text-primary'>
                       SMS Notifications
                     </p>
-                    <p className='text-sm text-[var(--text-secondary)]'>
+                    <p className='text-sm text-text-secondary'>
                       Receive SMS for critical alerts
                     </p>
                   </div>
@@ -75,7 +76,7 @@ export default function SettingsPage() {
       case 'system':
         return (
           <div className='space-y-6'>
-            <h2 className='text-xl font-semibold text-[var(--text-primary)]'>
+            <h2 className='text-xl font-semibold text-text-primary'>
               System Configuration
             </h2>
             <Card padding='md'>
@@ -91,7 +92,8 @@ export default function SettingsPage() {
                     { value: 'IST', label: 'Indian Standard Time (IST)' },
                     { value: 'UTC', label: 'UTC' },
                   ]}
-                  value='IST'
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
                 />
               </div>
             </Card>
@@ -100,7 +102,7 @@ export default function SettingsPage() {
       default:
         return (
           <Card padding='md'>
-            <p className='text-[var(--text-secondary)]'>
+            <p className='text-text-secondary'>
               Settings for this section coming soon
             </p>
           </Card>
@@ -111,10 +113,8 @@ export default function SettingsPage() {
   return (
     <div className='flex flex-col gap-6'>
       <div>
-        <h1 className='text-2xl font-bold text-[var(--text-primary)]'>
-          Settings
-        </h1>
-        <p className='text-sm text-[var(--text-secondary)] mt-1'>
+        <h1 className='text-2xl font-bold text-text-primary'>Settings</h1>
+        <p className='text-sm text-text-secondary mt-1'>
           Manage system configuration and preferences
         </p>
       </div>
@@ -132,8 +132,8 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors mb-1 ${
                       activeTab === tab.id
-                        ? 'bg-[var(--primary-light)] text-[var(--primary)]'
-                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                        ? 'bg-primary-light text-primary'
+                        : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                     }`}
                   >
                     <Icon size={18} />

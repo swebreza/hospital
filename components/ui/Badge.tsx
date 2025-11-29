@@ -20,12 +20,12 @@ export default function Badge({
   className,
 }: BadgeProps) {
   const variants = {
-    default: 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]',
-    success: 'bg-[var(--success-light)] text-[var(--success)]',
-    danger: 'bg-[var(--danger-light)] text-[var(--danger)]',
-    warning: 'bg-[var(--warning-light)] text-[var(--warning)]',
-    info: 'bg-[var(--info-light)] text-[var(--info)]',
-    primary: 'bg-[var(--primary-light)] text-[var(--primary)]',
+    default: 'bg-bg-tertiary text-text-primary',
+    success: 'bg-success-light text-success',
+    danger: 'bg-danger-light text-danger',
+    warning: 'bg-warning-light text-warning',
+    info: 'bg-info-light text-info',
+    primary: 'bg-primary-light text-primary',
   }
 
   const sizes = {

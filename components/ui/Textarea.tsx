@@ -28,11 +28,11 @@ export default function Textarea({
       {label && (
         <label
           htmlFor={textareaId}
-          className='text-sm font-medium text-[var(--text-primary)]'
+          className='text-sm font-medium text-text-primary'
         >
           {label}
           {props.required && (
-            <span className='text-[var(--danger)] ml-1'>*</span>
+            <span className='text-danger ml-1'>*</span>
           )}
         </label>
       )}
@@ -40,23 +40,23 @@ export default function Textarea({
       <textarea
         id={textareaId}
         className={clsx(
-          'w-full px-4 py-2 text-sm rounded-md border transition-all resize-y',
+          'w-full px-4 py-2 text-sm rounded-lg border transition-all resize-y shadow-sm hover:shadow-md',
           'focus:outline-none focus:ring-2 focus:ring-offset-0',
           error
-            ? 'border-[var(--border-error)] focus:ring-[var(--danger)] focus:border-[var(--danger)]'
-            : 'border-[var(--border-color)] focus:ring-[var(--primary)] focus:border-[var(--primary)]',
-          'disabled:bg-[var(--bg-tertiary)] disabled:cursor-not-allowed disabled:text-[var(--text-disabled)]',
+            ? 'border-border-error focus:ring-danger focus:border-danger'
+            : 'border-border focus:ring-primary focus:border-primary',
+          'disabled:bg-bg-tertiary disabled:cursor-not-allowed disabled:text-text-disabled',
           className
         )}
         {...props}
       />
 
       {error && (
-        <p className='text-xs text-[var(--danger)] font-medium'>{error}</p>
+        <p className='text-xs text-danger font-medium'>{error}</p>
       )}
 
       {helperText && !error && (
-        <p className='text-xs text-[var(--text-secondary)]'>{helperText}</p>
+        <p className='text-xs text-text-secondary'>{helperText}</p>
       )}
     </div>
   )

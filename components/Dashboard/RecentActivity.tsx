@@ -39,30 +39,39 @@ const activities = [
 ];
 
 export default function RecentActivity() {
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'danger':
+        return 'bg-danger'
+      case 'success':
+        return 'bg-success'
+      case 'warning':
+        return 'bg-warning'
+      case 'info':
+        return 'bg-info'
+      default:
+        return 'bg-primary'
+    }
+  }
+
   return (
-    <div className="card h-full">
+    <div className="bg-white rounded-lg p-6 shadow-sm border border-border h-full">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-lg">Recent Activity & Alerts</h3>
+        <h3 className="font-bold text-lg text-text-primary">Recent Activity & Alerts</h3>
         <button className="text-sm text-primary font-medium hover:underline">View All</button>
       </div>
       
       <div className="flex flex-col gap-4">
         {activities.map((activity) => (
           <div key={activity.id} className="flex items-start gap-3 p-3 rounded-md hover:bg-gray-50 transition-colors">
-            <div style={{
-              padding: '0.5rem',
-              borderRadius: '50%',
-              backgroundColor: `var(--${activity.type})`,
-              color: 'white',
-              opacity: 0.9
-            }}>
+            <div className={`p-2 rounded-full ${getTypeColor(activity.type)} text-white opacity-90`}>
               <activity.icon size={16} />
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-bold">{activity.title}</h4>
-              <p className="text-xs text-secondary">{activity.description}</p>
+              <h4 className="text-sm font-bold text-text-primary">{activity.title}</h4>
+              <p className="text-xs text-text-secondary">{activity.description}</p>
             </div>
-            <span className="text-xs text-light">{activity.time}</span>
+            <span className="text-xs text-text-tertiary">{activity.time}</span>
           </div>
         ))}
       </div>

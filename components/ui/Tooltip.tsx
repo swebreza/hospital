@@ -88,7 +88,7 @@ export default function Tooltip({
           <div
             ref={tooltipRef}
             className={clsx(
-              'absolute z-[var(--z-tooltip)] px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg pointer-events-none',
+              'absolute z-tooltip px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg pointer-events-none',
               'animate-in fade-in-0 zoom-in-95'
             )}
             style={{

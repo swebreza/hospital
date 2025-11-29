@@ -32,7 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   return (
-    <div className='flex h-screen bg-[var(--bg-secondary)] overflow-hidden'>
+    <div className='flex h-screen bg-bg-secondary overflow-hidden'>
       <Sidebar />
 
       {/* Main Content Area */}
@@ -45,8 +45,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <Header />
 
-        <main className='flex-1 overflow-auto'>
-          <div className='p-4 lg:p-6 lg:p-8'>
+        <main className='flex-1 overflow-auto scrollbar-thin'>
+          <div className='p-4 lg:p-6 xl:p-8'>
             {/* Breadcrumb */}
             <div className='mb-6'>
               <Breadcrumb />
@@ -55,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Page Content */}
             {isLoading ? (
               <div className='flex items-center justify-center h-64'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
               </div>
             ) : (
               <motion.div

@@ -86,7 +86,7 @@ export default function AssetFilters({
       >
         Filters
         {activeFiltersCount > 0 && (
-          <span className='ml-1 px-1.5 py-0.5 bg-[var(--primary)] text-white text-xs font-bold rounded-full'>
+          <span className='ml-1 px-1.5 py-0.5 bg-primary text-white text-xs font-bold rounded-full'>
             {activeFiltersCount}
           </span>
         )}
@@ -96,23 +96,23 @@ export default function AssetFilters({
         {isOpen && (
           <>
             <div
-              className='fixed inset-0 z-[var(--z-modal-backdrop)] bg-black/50'
+              className='fixed inset-0 z-modal-backdrop bg-black/50'
               onClick={() => setIsOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className='fixed left-4 top-20 z-[var(--z-modal)] w-80'
+              className='fixed left-4 top-20 z-modal w-80'
             >
               <Card padding='md'>
                 <div className='flex items-center justify-between mb-4'>
-                  <h3 className='font-semibold text-[var(--text-primary)]'>
+                  <h3 className='font-semibold text-text-primary'>
                     Filters
                   </h3>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className='p-1 hover:bg-[var(--bg-hover)] rounded'
+                    className='p-1 hover:bg-bg-hover rounded transition-colors'
                   >
                     <X size={18} />
                   </button>

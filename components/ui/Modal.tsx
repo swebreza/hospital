@@ -56,11 +56,11 @@ export default function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className='fixed inset-0 bg-black/50 backdrop-blur-sm z-[var(--z-modal-backdrop)]'
+            className='fixed inset-0 bg-black/50 backdrop-blur-sm z-modal-backdrop'
           />
 
           {/* Modal */}
-          <div className='fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 pointer-events-none'>
+          <div className='fixed inset-0 z-modal flex items-center justify-center p-4 pointer-events-none'>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -73,15 +73,15 @@ export default function Modal({
             >
               {/* Header */}
               {(title || showCloseButton) && (
-                <div className='flex items-start justify-between p-6 border-b border-[var(--border-color)]'>
+                <div className='flex items-start justify-between p-6 border-b border-border'>
                   <div className='flex-1'>
                     {title && (
-                      <h2 className='text-xl font-bold text-[var(--text-primary)]'>
+                      <h2 className='text-xl font-bold text-text-primary'>
                         {title}
                       </h2>
                     )}
                     {description && (
-                      <p className='text-sm text-[var(--text-secondary)] mt-1'>
+                      <p className='text-sm text-text-secondary mt-1'>
                         {description}
                       </p>
                     )}
@@ -89,7 +89,7 @@ export default function Modal({
                   {showCloseButton && (
                     <button
                       onClick={onClose}
-                      className='ml-4 p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      className='ml-4 p-2 hover:bg-bg-hover rounded-lg transition-colors text-text-secondary hover:text-text-primary'
                     >
                       <X size={20} />
                     </button>
@@ -98,11 +98,11 @@ export default function Modal({
               )}
 
               {/* Content */}
-              <div className='flex-1 overflow-y-auto p-6'>{children}</div>
+              <div className='flex-1 overflow-y-auto p-6 scrollbar-thin'>{children}</div>
 
               {/* Footer */}
               {footer && (
-                <div className='p-6 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]'>
+                <div className='p-6 border-t border-border bg-bg-secondary'>
                   {footer}
                 </div>
               )}

@@ -19,9 +19,9 @@ export default function Card({
   ...props
 }: CardProps) {
   const variants = {
-    default: 'bg-[var(--bg-primary)] border border-[var(--border-color)]',
-    elevated: 'bg-[var(--bg-primary)] shadow-md',
-    outlined: 'bg-transparent border-2 border-[var(--border-color)]',
+    default: 'bg-white border border-border',
+    elevated: 'bg-white shadow-md',
+    outlined: 'bg-transparent border-2 border-border',
   }
 
   const paddings = {
@@ -34,14 +34,18 @@ export default function Card({
   return (
     <div
       className={clsx(
-        'rounded-lg transition-all',
+        'rounded-lg transition-all relative overflow-hidden',
         variants[variant],
         paddings[padding],
-        hover && 'hover:shadow-lg hover:border-[var(--primary)] cursor-pointer',
+        hover &&
+          'hover:shadow-lg hover:border-primary cursor-pointer hover:-translate-y-0.5',
         className
       )}
       {...props}
     >
+      {hover && (
+        <div className='absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-info opacity-0 group-hover:opacity-100 transition-opacity'></div>
+      )}
       {children}
     </div>
   )

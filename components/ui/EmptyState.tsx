@@ -30,17 +30,17 @@ export default function EmptyState({
   return (
     <div className='flex flex-col items-center justify-center py-12 px-4 text-center'>
       {Icon && (
-        <div className='mb-4 p-4 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]'>
+        <div className='mb-4 p-4 rounded-full bg-bg-tertiary text-text-tertiary'>
           <Icon size={iconSizes[size]} />
         </div>
       )}
 
-      <h3 className='text-lg font-semibold text-[var(--text-primary)] mb-2'>
+      <h3 className='text-lg font-semibold text-text-primary mb-2'>
         {title}
       </h3>
 
       {description && (
-        <p className='text-sm text-[var(--text-secondary)] max-w-md mb-6'>
+        <p className='text-sm text-text-secondary max-w-md mb-6'>
           {description}
         </p>
       )}

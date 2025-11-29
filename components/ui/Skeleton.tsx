@@ -18,7 +18,7 @@ export default function Skeleton({
   height,
   animation = 'pulse',
 }: SkeletonProps) {
-  const baseStyles = 'bg-[var(--bg-tertiary)]'
+  const baseStyles = 'bg-bg-tertiary'
 
   const variants = {
     text: 'rounded',

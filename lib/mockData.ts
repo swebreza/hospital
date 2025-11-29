@@ -1,4 +1,6 @@
-export const assets = [
+import type { Asset } from './types';
+
+export const assets: Asset[] = [
   {
     id: 'AST-001',
     name: 'MRI Scanner',
@@ -11,7 +13,9 @@ export const assets = [
     purchaseDate: '2023-01-15',
     nextPmDate: '2024-07-15',
     value: 12000000,
-    image: '/assets/mri.png'
+    image: '/assets/mri.png',
+    createdAt: '2023-01-15T10:00:00Z',
+    updatedAt: '2023-01-15T10:00:00Z',
   },
   {
     id: 'AST-002',
@@ -25,7 +29,9 @@ export const assets = [
     purchaseDate: '2022-05-20',
     nextPmDate: '2024-05-20',
     value: 1500000,
-    image: '/assets/ventilator.png'
+    image: '/assets/ventilator.png',
+    createdAt: '2022-05-20T10:00:00Z',
+    updatedAt: '2022-05-20T10:00:00Z',
   },
   {
     id: 'AST-003',
@@ -39,7 +45,9 @@ export const assets = [
     purchaseDate: '2021-11-10',
     nextPmDate: '2024-11-10',
     value: 450000,
-    image: '/assets/defib.png'
+    image: '/assets/defib.png',
+    createdAt: '2021-11-10T10:00:00Z',
+    updatedAt: '2021-11-10T10:00:00Z',
   },
   {
     id: 'AST-004',
@@ -53,7 +61,9 @@ export const assets = [
     purchaseDate: '2023-03-01',
     nextPmDate: '2024-09-01',
     value: 85000,
-    image: '/assets/pump.png'
+    image: '/assets/pump.png',
+    createdAt: '2023-03-01T10:00:00Z',
+    updatedAt: '2023-03-01T10:00:00Z',
   },
   {
     id: 'AST-005',
@@ -67,7 +77,9 @@ export const assets = [
     purchaseDate: '2020-08-15',
     nextPmDate: '2024-08-15',
     value: 3500000,
-    image: '/assets/xray.png'
+    image: '/assets/xray.png',
+    createdAt: '2020-08-15T10:00:00Z',
+    updatedAt: '2020-08-15T10:00:00Z',
   },
   {
     id: 'AST-006',
@@ -81,7 +93,9 @@ export const assets = [
     purchaseDate: '2022-12-05',
     nextPmDate: '2024-06-05',
     value: 2800000,
-    image: '/assets/anesthesia.png'
+    image: '/assets/anesthesia.png',
+    createdAt: '2022-12-05T10:00:00Z',
+    updatedAt: '2022-12-05T10:00:00Z',
   },
   {
     id: 'AST-007',
@@ -95,7 +109,9 @@ export const assets = [
     purchaseDate: '2023-06-20',
     nextPmDate: '2024-12-20',
     value: 320000,
-    image: '/assets/monitor.png'
+    image: '/assets/monitor.png',
+    createdAt: '2023-06-20T10:00:00Z',
+    updatedAt: '2023-06-20T10:00:00Z',
   },
   {
     id: 'AST-008',
@@ -109,6 +125,8 @@ export const assets = [
     purchaseDate: '2021-04-10',
     nextPmDate: '2024-10-10',
     value: 4200000,
-    image: '/assets/ultrasound.png'
-  }
+    image: '/assets/ultrasound.png',
+    createdAt: '2021-04-10T10:00:00Z',
+    updatedAt: '2021-04-10T10:00:00Z',
+  },
 ];

@@ -77,7 +77,7 @@ export default function Breadcrumb({ items, className }: BreadcrumbProps) {
               {index === 0 ? (
                 <Link
                   href={item.href || '/'}
-                  className='flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors'
+                  className='flex items-center gap-1 text-text-secondary hover:text-primary transition-colors'
                 >
                   <Home size={16} />
                 </Link>
@@ -85,16 +85,16 @@ export default function Breadcrumb({ items, className }: BreadcrumbProps) {
                 <>
                   <ChevronRight
                     size={16}
-                    className='text-[var(--text-tertiary)]'
+                    className='text-text-tertiary'
                   />
                   {isLast ? (
-                    <span className='text-[var(--text-primary)] font-medium'>
+                    <span className='text-text-primary font-medium'>
                       {item.label}
                     </span>
                   ) : (
                     <Link
                       href={item.href || '#'}
-                      className='text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors'
+                      className='text-text-secondary hover:text-primary transition-colors'
                     >
                       {item.label}
                     </Link>
