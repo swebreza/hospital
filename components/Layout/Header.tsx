@@ -118,7 +118,7 @@ export default function Header() {
   }
 
   return (
-    <header className='h-16 flex items-center justify-between px-4 lg:px-6 border-b border-border bg-white/98 backdrop-blur-xl sticky top-0 z-sticky shadow-sm'>
+    <header className='h-16 flex items-center justify-between px-4 lg:px-6 border-b border-border bg-white/98 backdrop-blur-xl sticky top-0 z-[1020] shadow-sm'>
       {/* Search */}
       <form onSubmit={handleSearch} className='flex-1 max-w-2xl mr-4'>
         <div
@@ -179,14 +179,14 @@ export default function Header() {
             {showNotifications && (
               <>
                 <div
-                  className='fixed inset-0 z-dropdown'
+                  className='fixed inset-0 z-[1000]'
                   onClick={() => setShowNotifications(false)}
                 />
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className='absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-border z-dropdown max-h-96 overflow-hidden flex flex-col'
+                  className='absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-border z-[1000] max-h-96 overflow-hidden flex flex-col'
                 >
                   <div className='p-4 border-b border-border flex items-center justify-between'>
                     <h3 className='font-semibold text-text-primary'>
@@ -280,14 +280,14 @@ export default function Header() {
             {showUserMenu && (
               <>
                 <div
-                  className='fixed inset-0 z-dropdown'
+                  className='fixed inset-0 z-[1000]'
                   onClick={() => setShowUserMenu(false)}
                 />
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className='absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-border z-dropdown overflow-hidden'
+                  className='absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-border z-[1000] overflow-hidden'
                 >
                   <div className='p-4 border-b border-border'>
                     <p className='font-semibold text-text-primary'>John Doe</p>

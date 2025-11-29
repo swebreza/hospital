@@ -246,34 +246,46 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      {isMobile && (
-        <button
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className='fixed top-4 left-4 z-fixed p-2 bg-white rounded-lg shadow-md border border-border lg:hidden hover:bg-bg-hover transition-colors'
-          aria-label='Toggle menu'
-        >
-          {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+      {/* Mobile Overlay - Must be behind sidebar but above everything else */}
+      {isMobile && isMobileOpen && (
+        <div
+          className='fixed inset-0 bg-black/50 lg:hidden'
+          style={{ zIndex: 1035 }}
+          onClick={() => setIsMobileOpen(false)}
+        />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Must be above overlay */}
       <aside
-        className={`fixed left-0 top-0 h-full flex flex-col border-r border-border bg-white/98 backdrop-blur-xl transition-all duration-300 z-fixed shadow-xl ${
+        className={`fixed left-0 top-0 h-full flex flex-col border-r border-border bg-white transition-all duration-300 shadow-xl ${
           isMobile
-            ? `${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} w-64`
-            : `${isCollapsed ? 'w-20' : 'w-64'}`
+            ? `${
+                isMobileOpen
+                  ? 'translate-x-0 z-[1040]'
+                  : '-translate-x-full z-fixed'
+              } w-64`
+            : `z-fixed ${isCollapsed ? 'w-20' : 'w-64'}`
         }`}
+        style={
+          isMobile && isMobileOpen
+            ? { zIndex: 1040, position: 'fixed' }
+            : undefined
+        }
       >
         {sidebarContent}
       </aside>
 
-      {/* Mobile Overlay */}
-      {isMobile && isMobileOpen && (
-        <div
-          className='fixed inset-0 bg-black/50 z-modal-backdrop lg:hidden'
-          onClick={() => setIsMobileOpen(false)}
-        />
+      {/* Mobile Menu Button - Must be above sidebar when open */}
+      {isMobile && (
+        <button
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className={`fixed top-4 left-4 p-2 bg-white rounded-lg shadow-md border border-border lg:hidden hover:bg-bg-hover transition-colors z-[1050] ${
+            isMobileOpen ? 'left-[280px]' : 'left-4'
+          }`}
+          aria-label='Toggle menu'
+        >
+          {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       )}
     </>
   )

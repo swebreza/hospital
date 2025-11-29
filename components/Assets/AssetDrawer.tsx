@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, FileText, Clock, File, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Asset } from '@/lib/store';
+import Button from '@/components/ui/Button';
 
 interface AssetDrawerProps {
   isOpen: boolean;
@@ -26,8 +27,7 @@ export default function AssetDrawer({ isOpen, onClose, asset }: AssetDrawerProps
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black z-40"
-            style={{ backdropFilter: 'blur(4px)' }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1040]"
           />
           
           {/* Drawer */}
@@ -36,22 +36,22 @@ export default function AssetDrawer({ isOpen, onClose, asset }: AssetDrawerProps
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 flex flex-col"
-            style={{ width: '500px', maxWidth: '100vw' }}
+            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-[1050] flex flex-col w-full sm:w-[500px]"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-6 border-b flex justify-between items-start bg-gray-50">
+            <div className="p-6 border-b border-border flex justify-between items-start bg-bg-secondary">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{asset.name}</h2>
-                <p className="text-sm text-gray-500">{asset.id} • {asset.department}</p>
+                <h2 className="text-xl font-bold text-text-primary">{asset.name}</h2>
+                <p className="text-sm text-text-secondary">{asset.id} • {asset.department}</p>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+              <button onClick={onClose} className="p-2 hover:bg-bg-hover rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b px-6">
+            <div className="flex border-b border-border px-6">
               {[
                 { id: 'info', label: 'Information', icon: FileText },
                 { id: 'history', label: 'History', icon: Clock },
@@ -63,7 +63,7 @@ export default function AssetDrawer({ isOpen, onClose, asset }: AssetDrawerProps
                   className={`flex items-center gap-2 py-4 px-4 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      : 'border-transparent text-text-secondary hover:text-text-primary'
                   }`}
                 >
                   <tab.icon size={16} />
@@ -73,7 +73,7 @@ export default function AssetDrawer({ isOpen, onClose, asset }: AssetDrawerProps
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
               {activeTab === 'info' && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
@@ -88,8 +88,8 @@ export default function AssetDrawer({ isOpen, onClose, asset }: AssetDrawerProps
                   </div>
                   
                   <div>
-                    <h3 className="font-medium mb-2">Description</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                    <h3 className="font-medium mb-2 text-text-primary">Description</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
                       High-performance biomedical equipment used for critical patient care. 
                       Regular maintenance is required every 6 months.
                     </p>
@@ -131,9 +131,9 @@ export default function AssetDrawer({ isOpen, onClose, asset }: AssetDrawerProps
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
-              <button className="btn btn-outline" onClick={onClose}>Close</button>
-              <button className="btn btn-primary">Edit Asset</button>
+            <div className="p-4 border-t border-border bg-bg-secondary flex justify-end gap-3">
+              <Button variant="outline" onClick={onClose}>Close</Button>
+              <Button variant="primary">Edit Asset</Button>
             </div>
           </motion.div>
         </>
@@ -145,15 +145,15 @@ export default function AssetDrawer({ isOpen, onClose, asset }: AssetDrawerProps
 function InfoItem({ label, value, isBadge = false }: { label: string, value: string | number, isBadge?: boolean }) {
   return (
     <div>
-      <label className="text-xs text-gray-500 font-medium">{label}</label>
+      <label className="text-xs text-text-secondary font-medium">{label}</label>
       {isBadge ? (
         <div className="mt-1">
-          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <span className="px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
             {value}
           </span>
         </div>
       ) : (
-        <p className="text-sm font-medium text-gray-900 mt-1">{value}</p>
+        <p className="text-sm font-medium text-text-primary mt-1">{value}</p>
       )}
     </div>
   );
@@ -161,18 +161,18 @@ function InfoItem({ label, value, isBadge = false }: { label: string, value: str
 
 function HistoryItem({ date, title, user, status }: { date: string, title: string, user: string, status: string }) {
   return (
-    <div className="flex gap-4 p-3 border rounded-lg bg-gray-50">
-      <div className="flex-shrink-0 w-10 h-10 bg-white rounded-full flex items-center justify-center border text-gray-500">
+    <div className="flex gap-4 p-3 border border-border rounded-lg bg-bg-secondary">
+      <div className="flex-shrink-0 w-10 h-10 bg-white rounded-full flex items-center justify-center border border-border text-text-tertiary">
         <Clock size={18} />
       </div>
       <div className="flex-1">
         <div className="flex justify-between">
-          <h4 className="text-sm font-bold">{title}</h4>
-          <span className="text-xs text-gray-500">{date}</span>
+          <h4 className="text-sm font-bold text-text-primary">{title}</h4>
+          <span className="text-xs text-text-secondary">{date}</span>
         </div>
-        <p className="text-xs text-gray-600 mt-1">Performed by {user}</p>
+        <p className="text-xs text-text-secondary mt-1">Performed by {user}</p>
       </div>
-      <span className="text-xs font-medium text-green-600 self-center bg-green-50 px-2 py-1 rounded">
+      <span className="text-xs font-medium text-success self-center bg-success-light px-2 py-1 rounded">
         {status}
       </span>
     </div>
@@ -181,17 +181,17 @@ function HistoryItem({ date, title, user, status }: { date: string, title: strin
 
 function DocItem({ name, size }: { name: string, size: string }) {
   return (
-    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
+    <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-bg-hover transition-colors cursor-pointer group">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-50 text-blue-600 rounded">
+        <div className="p-2 bg-info-light text-info rounded">
           <FileText size={20} />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-900">{name}</p>
-          <p className="text-xs text-gray-500">{size}</p>
+          <p className="text-sm font-medium text-text-primary">{name}</p>
+          <p className="text-xs text-text-secondary">{size}</p>
         </div>
       </div>
-      <button className="p-2 text-gray-400 hover:text-primary transition-colors">
+      <button className="p-2 text-text-tertiary hover:text-primary transition-colors">
         <Download size={18} />
       </button>
     </div>

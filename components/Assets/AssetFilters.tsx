@@ -96,14 +96,14 @@ export default function AssetFilters({
         {isOpen && (
           <>
             <div
-              className='fixed inset-0 z-modal-backdrop bg-black/50'
+              className='fixed inset-0 z-[1040] bg-black/50'
               onClick={() => setIsOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className='fixed left-4 top-20 z-modal w-80'
+              className='fixed left-4 top-20 z-[1050] w-80'
             >
               <Card padding='md'>
                 <div className='flex items-center justify-between mb-4'>

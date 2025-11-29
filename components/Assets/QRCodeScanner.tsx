@@ -23,52 +23,64 @@ export default function QRCodeScanner({
   void _onScan
 
   return (
-    <div className='fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/50 backdrop-blur-sm'>
-      <div className='bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden'>
-        <div className='p-4 border-b border-[var(--border-color)] flex items-center justify-between'>
-          <h3 className='text-lg font-semibold text-[var(--text-primary)]'>
-            Scan QR Code
-          </h3>
-          <button
-            onClick={onClose}
-            className='p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors'
-          >
-            <X size={20} />
-          </button>
-        </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className='fixed inset-0 bg-black/50 backdrop-blur-sm z-[1040]'
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className='fixed inset-0 z-[1050] flex items-center justify-center p-4 pointer-events-none'>
+        <div
+          className='bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden pointer-events-auto'
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className='p-4 border-b border-border flex items-center justify-between'>
+            <h3 className='text-lg font-semibold text-text-primary'>
+              Scan QR Code
+            </h3>
+            <button
+              onClick={onClose}
+              className='p-2 hover:bg-bg-hover rounded-lg transition-colors'
+            >
+              <X size={20} />
+            </button>
+          </div>
 
-        <div className='p-6'>
-          <div
-            id='qr-reader'
-            ref={containerRef}
-            className='w-full aspect-square bg-black rounded-lg overflow-hidden mb-4'
-          />
+          <div className='p-6'>
+            <div
+              id='qr-reader'
+              ref={containerRef}
+              className='w-full aspect-square bg-black rounded-lg overflow-hidden mb-4'
+            />
 
-          {error && (
-            <div className='p-4 bg-[var(--danger-lighter)] border border-[var(--danger-light)] rounded-lg mb-4'>
-              <p className='text-sm text-[var(--danger)]'>{error}</p>
+            {error && (
+              <div className='p-4 bg-danger-lighter border border-danger-light rounded-lg mb-4'>
+                <p className='text-sm text-danger'>{error}</p>
+              </div>
+            )}
+
+            {!error && (
+              <div className='text-center py-8'>
+                <Camera
+                  size={48}
+                  className='mx-auto text-text-tertiary mb-4'
+                />
+                <p className='text-sm text-text-secondary'>
+                  Position the QR code within the frame
+                </p>
+              </div>
+            )}
+
+            <div className='flex gap-3'>
+              <Button variant='outline' onClick={onClose} className='flex-1'>
+                Cancel
+              </Button>
             </div>
-          )}
-
-          {!error && (
-            <div className='text-center py-8'>
-              <Camera
-                size={48}
-                className='mx-auto text-[var(--text-tertiary)] mb-4'
-              />
-              <p className='text-sm text-[var(--text-secondary)]'>
-                Position the QR code within the frame
-              </p>
-            </div>
-          )}
-
-          <div className='flex gap-3'>
-            <Button variant='outline' onClick={onClose} className='flex-1'>
-              Cancel
-            </Button>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
