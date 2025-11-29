@@ -12,18 +12,20 @@ export default function PMPage() {
     <div className='flex flex-col gap-6 h-[calc(100vh-100px)]'>
       <div className='flex justify-between items-center'>
         <div>
-          <h1 className='text-2xl font-bold'>Preventive Maintenance</h1>
-          <p className='text-secondary'>
+          <h1 className='text-2xl font-bold text-text-primary'>
+            Preventive Maintenance
+          </h1>
+          <p className='text-text-secondary'>
             Schedule and track maintenance activities
           </p>
         </div>
-        <div className='flex bg-gray-100 p-1 rounded-lg'>
+        <div className='flex bg-bg-tertiary p-1 rounded-lg'>
           <button
             onClick={() => setView('calendar')}
             className={`p-2 rounded-md flex items-center gap-2 text-sm font-medium transition-all ${
               view === 'calendar'
                 ? 'bg-white shadow text-primary'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <CalendarIcon size={16} />
@@ -34,7 +36,7 @@ export default function PMPage() {
             className={`p-2 rounded-md flex items-center gap-2 text-sm font-medium transition-all ${
               view === 'list'
                 ? 'bg-white shadow text-primary'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <List size={16} />

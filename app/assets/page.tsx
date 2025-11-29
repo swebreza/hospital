@@ -109,7 +109,16 @@ export default function AssetsPage() {
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <Button variant='outline' size='sm' leftIcon={Upload}>
+          <Button 
+            variant='outline' 
+            size='sm' 
+            leftIcon={Upload}
+            onClick={() => {
+              toast.info('CSV Import', {
+                description: 'Please select a CSV file to import assets',
+              })
+            }}
+          >
             Import CSV
           </Button>
           <Button

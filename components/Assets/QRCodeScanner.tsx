@@ -29,7 +29,7 @@ export default function QRCodeScanner({
         className='fixed inset-0 bg-black/50 backdrop-blur-sm z-[1040]'
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className='fixed inset-0 z-[1050] flex items-center justify-center p-4 pointer-events-none'>
         <div
@@ -63,10 +63,7 @@ export default function QRCodeScanner({
 
             {!error && (
               <div className='text-center py-8'>
-                <Camera
-                  size={48}
-                  className='mx-auto text-text-tertiary mb-4'
-                />
+                <Camera size={48} className='mx-auto text-text-tertiary mb-4' />
                 <p className='text-sm text-text-secondary'>
                   Position the QR code within the frame
                 </p>

@@ -1,4 +1,4 @@
-import type { Asset } from './types';
+import type { Asset } from './types'
 
 export const assets: Asset[] = [
   {
@@ -13,7 +13,8 @@ export const assets: Asset[] = [
     purchaseDate: '2023-01-15',
     nextPmDate: '2024-07-15',
     value: 12000000,
-    image: '/assets/mri.png',
+    image:
+      'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
     createdAt: '2023-01-15T10:00:00Z',
     updatedAt: '2023-01-15T10:00:00Z',
   },
@@ -29,7 +30,8 @@ export const assets: Asset[] = [
     purchaseDate: '2022-05-20',
     nextPmDate: '2024-05-20',
     value: 1500000,
-    image: '/assets/ventilator.png',
+    image:
+      'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=800&h=600&fit=crop',
     createdAt: '2022-05-20T10:00:00Z',
     updatedAt: '2022-05-20T10:00:00Z',
   },
@@ -45,7 +47,8 @@ export const assets: Asset[] = [
     purchaseDate: '2021-11-10',
     nextPmDate: '2024-11-10',
     value: 450000,
-    image: '/assets/defib.png',
+    image:
+      'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=800&h=600&fit=crop',
     createdAt: '2021-11-10T10:00:00Z',
     updatedAt: '2021-11-10T10:00:00Z',
   },
@@ -61,7 +64,8 @@ export const assets: Asset[] = [
     purchaseDate: '2023-03-01',
     nextPmDate: '2024-09-01',
     value: 85000,
-    image: '/assets/pump.png',
+    image:
+      'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=800&h=600&fit=crop',
     createdAt: '2023-03-01T10:00:00Z',
     updatedAt: '2023-03-01T10:00:00Z',
   },
@@ -77,7 +81,8 @@ export const assets: Asset[] = [
     purchaseDate: '2020-08-15',
     nextPmDate: '2024-08-15',
     value: 3500000,
-    image: '/assets/xray.png',
+    image:
+      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=800&h=600&fit=crop',
     createdAt: '2020-08-15T10:00:00Z',
     updatedAt: '2020-08-15T10:00:00Z',
   },
@@ -93,7 +98,8 @@ export const assets: Asset[] = [
     purchaseDate: '2022-12-05',
     nextPmDate: '2024-06-05',
     value: 2800000,
-    image: '/assets/anesthesia.png',
+    image:
+      'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=800&h=600&fit=crop',
     createdAt: '2022-12-05T10:00:00Z',
     updatedAt: '2022-12-05T10:00:00Z',
   },
@@ -109,7 +115,8 @@ export const assets: Asset[] = [
     purchaseDate: '2023-06-20',
     nextPmDate: '2024-12-20',
     value: 320000,
-    image: '/assets/monitor.png',
+    image:
+      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&h=600&fit=crop',
     createdAt: '2023-06-20T10:00:00Z',
     updatedAt: '2023-06-20T10:00:00Z',
   },
@@ -125,8 +132,9 @@ export const assets: Asset[] = [
     purchaseDate: '2021-04-10',
     nextPmDate: '2024-10-10',
     value: 4200000,
-    image: '/assets/ultrasound.png',
+    image:
+      'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
     createdAt: '2021-04-10T10:00:00Z',
     updatedAt: '2021-04-10T10:00:00Z',
   },
-];
+]

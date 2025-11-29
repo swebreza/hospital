@@ -98,7 +98,9 @@ export default function Modal({
               )}
 
               {/* Content */}
-              <div className='flex-1 overflow-y-auto p-6 scrollbar-thin'>{children}</div>
+              <div className='flex-1 overflow-y-auto p-6 scrollbar-thin'>
+                {children}
+              </div>
 
               {/* Footer */}
               {footer && (

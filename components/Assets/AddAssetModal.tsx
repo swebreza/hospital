@@ -40,7 +40,8 @@ export default function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
       ...formData,
       value: Number(formData.value),
       status: 'Active',
-      image: '/assets/default.png', // Placeholder
+      image:
+        'https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=800&h=600&fit=crop', // Default medical equipment placeholder
       createdAt: now,
       updatedAt: now,
     }

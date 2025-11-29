@@ -14,6 +14,8 @@ import Badge from '@/components/ui/Badge'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import { PreventiveMaintenance, PMStatus } from '@/lib/types'
+import { DEMO_DATE } from '@/lib/demoContext'
+import { toast } from 'sonner'
 
 // Mock PM data - replace with API calls
 const mockPMs: PreventiveMaintenance[] = [
@@ -111,19 +113,37 @@ export default function PMListView() {
   }
 
   const isOverdue = (scheduledDate: string) => {
-    return new Date(scheduledDate) < new Date()
+    return new Date(scheduledDate) < DEMO_DATE
+  }
+
+  const handleStartPM = (pmId: string) => {
+    toast.success('PM started!', {
+      description: 'Maintenance task has been initiated',
+    })
+  }
+
+  const handleCompletePM = (pmId: string) => {
+    toast.success('PM completed successfully!', {
+      description: 'Maintenance task has been marked as complete',
+    })
+  }
+
+  const handleViewDetails = (pmId: string) => {
+    toast.info('Opening PM details...', {
+      description: `Viewing details for ${pmId}`,
+    })
   }
 
   return (
     <Card padding='none'>
       {/* Filters */}
-      <div className='p-4 border-b border-[var(--border-color)] flex items-center gap-2 flex-wrap'>
+      <div className='p-4 border-b border-border flex items-center gap-2 flex-wrap'>
         <button
           onClick={() => setFilter('all')}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
             filter === 'all'
-              ? 'bg-[var(--primary)] text-white'
-              : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+              ? 'bg-primary text-white'
+              : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover'
           }`}
         >
           All
@@ -142,8 +162,8 @@ export default function PMListView() {
             onClick={() => setFilter(status)}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               filter === status
-                ? 'bg-[var(--primary)] text-white'
-                : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                ? 'bg-primary text-white'
+                : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover'
             }`}
           >
             {status}
@@ -154,21 +174,21 @@ export default function PMListView() {
       {/* PM List */}
       <div className='overflow-x-auto'>
         <table className='w-full'>
-          <thead className='bg-[var(--bg-secondary)] border-b border-[var(--border-color)]'>
+          <thead className='bg-bg-secondary border-b border-border'>
             <tr>
-              <th className='p-4 text-left text-sm font-semibold text-[var(--text-primary)]'>
+              <th className='p-4 text-left text-sm font-semibold text-text-primary'>
                 Asset
               </th>
-              <th className='p-4 text-left text-sm font-semibold text-[var(--text-primary)]'>
+              <th className='p-4 text-left text-sm font-semibold text-text-primary'>
                 Scheduled Date
               </th>
-              <th className='p-4 text-left text-sm font-semibold text-[var(--text-primary)]'>
+              <th className='p-4 text-left text-sm font-semibold text-text-primary'>
                 Status
               </th>
-              <th className='p-4 text-left text-sm font-semibold text-[var(--text-primary)]'>
+              <th className='p-4 text-left text-sm font-semibold text-text-primary'>
                 Technician
               </th>
-              <th className='p-4 text-left text-sm font-semibold text-[var(--text-primary)]'>
+              <th className='p-4 text-left text-sm font-semibold text-text-primary'>
                 Actions
               </th>
             </tr>
@@ -182,27 +202,27 @@ export default function PMListView() {
               return (
                 <tr
                   key={pm.id}
-                  className={`hover:bg-[var(--bg-hover)] transition-colors ${
-                    overdue ? 'bg-[var(--danger-lighter)]' : ''
+                  className={`hover:bg-bg-hover transition-colors ${
+                    overdue ? 'bg-danger-lighter' : ''
                   }`}
                 >
                   <td className='p-4'>
                     <div>
-                      <p className='font-medium text-[var(--text-primary)]'>
+                      <p className='font-medium text-text-primary'>
                         {pm.asset?.name || 'Unknown Asset'}
                       </p>
-                      <p className='text-xs text-[var(--text-secondary)]'>
+                      <p className='text-xs text-text-secondary'>
                         {pm.asset?.department} • {pm.asset?.location}
                       </p>
                     </div>
                   </td>
                   <td className='p-4'>
                     <div>
-                      <p className='text-sm font-medium text-[var(--text-primary)]'>
+                      <p className='text-sm font-medium text-text-primary'>
                         {format(new Date(pm.scheduledDate), 'MMM dd, yyyy')}
                       </p>
                       {pm.completedDate && (
-                        <p className='text-xs text-[var(--text-secondary)]'>
+                        <p className='text-xs text-text-secondary'>
                           Completed:{' '}
                           {format(new Date(pm.completedDate), 'MMM dd, yyyy')}
                         </p>
@@ -226,22 +246,33 @@ export default function PMListView() {
                       {overdue && ' (Overdue)'}
                     </Badge>
                   </td>
-                  <td className='p-4 text-sm text-[var(--text-secondary)]'>
+                  <td className='p-4 text-sm text-text-secondary'>
                     {pm.technician?.name || 'Unassigned'}
                   </td>
                   <td className='p-4'>
                     <div className='flex items-center gap-2'>
                       {pm.status === 'Scheduled' && (
-                        <Button variant='outline' size='sm'>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handleStartPM(pm.id)}
+                        >
                           Start PM
                         </Button>
                       )}
                       {pm.status === 'In Progress' && (
-                        <Button variant='primary' size='sm'>
+                        <Button
+                          variant='primary'
+                          size='sm'
+                          onClick={() => handleCompletePM(pm.id)}
+                        >
                           Complete
                         </Button>
                       )}
-                      <button className='text-sm text-[var(--text-secondary)] hover:text-[var(--primary)]'>
+                      <button
+                        onClick={() => handleViewDetails(pm.id)}
+                        className='text-sm text-text-secondary hover:text-primary transition-colors'
+                      >
                         View
                       </button>
                     </div>
@@ -255,7 +286,7 @@ export default function PMListView() {
 
       {filteredPMs.length === 0 && (
         <div className='p-12 text-center'>
-          <p className='text-[var(--text-secondary)]'>
+          <p className='text-text-secondary'>
             No preventive maintenances found
           </p>
         </div>

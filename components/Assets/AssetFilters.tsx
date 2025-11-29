@@ -107,9 +107,7 @@ export default function AssetFilters({
             >
               <Card padding='md'>
                 <div className='flex items-center justify-between mb-4'>
-                  <h3 className='font-semibold text-text-primary'>
-                    Filters
-                  </h3>
+                  <h3 className='font-semibold text-text-primary'>Filters</h3>
                   <button
                     onClick={() => setIsOpen(false)}
                     className='p-1 hover:bg-bg-hover rounded transition-colors'

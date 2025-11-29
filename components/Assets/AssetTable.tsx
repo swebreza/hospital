@@ -187,13 +187,21 @@ export default function AssetTable(props: AssetTableProps = {}) {
                     </span>
                   </td>
                   <td className='p-4'>
-                    <div className='flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-                      <button className='p-2 hover:bg-primary-light rounded-lg text-text-secondary hover:text-primary transition-all hover:scale-110'>
+                    <div className='flex gap-2 opacity-70 group-hover:opacity-100 transition-opacity'>
+                      <button 
+                        className='p-2 hover:bg-primary-light rounded-lg text-text-secondary hover:text-primary transition-all hover:scale-110'
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRowClick(asset)
+                        }}
+                        title='View Details'
+                      >
                         <Eye size={18} />
                       </button>
                       <button
                         className='p-2 hover:bg-danger-light rounded-lg text-text-secondary hover:text-danger transition-all hover:scale-110'
                         onClick={(e) => handleDelete(asset.id, e)}
+                        title='Delete Asset'
                       >
                         <Trash2 size={18} />
                       </button>

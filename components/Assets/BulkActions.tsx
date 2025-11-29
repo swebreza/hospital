@@ -23,9 +23,9 @@ export default function BulkActions({
   if (selectedAssets.length === 0) return null
 
   return (
-    <div className='flex items-center gap-3 p-4 bg-[var(--primary-lighter)] border border-[var(--primary-light)] rounded-lg'>
+    <div className='flex items-center gap-3 p-4 bg-primary-lighter border border-primary-light rounded-lg'>
       <div className='flex-1'>
-        <p className='text-sm font-medium text-[var(--primary)]'>
+        <p className='text-sm font-medium text-primary'>
           {selectedAssets.length} asset{selectedAssets.length !== 1 ? 's' : ''}{' '}
           selected
         </p>
@@ -65,7 +65,7 @@ export default function BulkActions({
 
         <button
           onClick={onClearSelection}
-          className='text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2'
+          className='text-sm text-text-secondary hover:text-text-primary px-2 transition-colors'
         >
           Clear
         </button>
