@@ -127,7 +127,10 @@ export default function ReportCharts({ reportType, reportData }: ReportChartsPro
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="count"
-                label={(entry) => `${entry.status}: ${entry.count}`}
+                label={(props: any) => {
+                  const entry = props.payload as { status: string; count: number }
+                  return `${entry.status}: ${entry.count}`
+                }}
               >
                 {data.byStatus.map((entry, index) => (
                   <Cell
