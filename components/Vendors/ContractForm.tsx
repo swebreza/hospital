@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
-import type { Contract, Asset } from '@/lib/types'
+import type { Contract, Asset, ContractType, ContractStatus } from '@/lib/types'
 
 interface ContractFormProps {
   contract?: Contract
@@ -148,7 +148,7 @@ export default function ContractForm({
       <Select
         label='Contract Type'
         value={formData.type}
-        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+        onChange={(e) => setFormData({ ...formData, type: e.target.value as ContractType })}
         error={errors.type}
         options={[
           { value: 'AMC', label: 'AMC (Annual Maintenance Contract)' },
@@ -206,7 +206,7 @@ export default function ContractForm({
       <Select
         label='Status'
         value={formData.status}
-        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+        onChange={(e) => setFormData({ ...formData, status: e.target.value as ContractStatus })}
         options={[
           { value: 'Active', label: 'Active' },
           { value: 'Expired', label: 'Expired' },

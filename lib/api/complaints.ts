@@ -15,14 +15,17 @@ export const complaintsApi = {
     limit = 10,
     filters?: FilterOptions
   ): Promise<PaginatedResponse<Complaint>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(filters?.search && { search: filters.search }),
-      ...(filters?.status && { status: filters.status }),
-      ...(filters?.priority && { priority: filters.priority }),
-      ...(filters?.department && { department: filters.department }),
-    })
+    }
+    
+    if (filters?.search) paramsObj.search = filters.search
+    if (filters?.status) paramsObj.status = filters.status
+    if (filters?.priority && typeof filters.priority === 'string') paramsObj.priority = filters.priority
+    if (filters?.department) paramsObj.department = filters.department
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<Complaint>>(`/complaints?${params.toString()}`)
   },

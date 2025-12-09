@@ -248,6 +248,7 @@ export interface Contract {
   renewalDate?: string
   documents?: string[]
   status: ContractStatus
+  notes?: string
   createdAt: string
   updatedAt: string
 }
