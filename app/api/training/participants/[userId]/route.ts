@@ -76,17 +76,17 @@ export async function GET(
         sessionDate: p.trainingSessionId.sessionDate?.toISOString(),
         status: p.trainingSessionId.status,
         department: p.trainingSessionId.department,
-        asset: p.trainingSessionId.assetId?._id ? {
-          id: String(p.trainingSessionId.assetId.id || p.trainingSessionId.assetId._id),
-          name: p.trainingSessionId.assetId.name || '',
-          model: p.trainingSessionId.assetId.model || '',
-          manufacturer: p.trainingSessionId.assetId.manufacturer || '',
-          department: p.trainingSessionId.assetId.department || '',
+        asset: p.trainingSessionId.assetId?._id && typeof (p.trainingSessionId.assetId as any).name !== 'undefined' ? {
+          id: String((p.trainingSessionId.assetId as any).id || p.trainingSessionId.assetId._id),
+          name: (p.trainingSessionId.assetId as any).name || '',
+          model: (p.trainingSessionId.assetId as any).model || '',
+          manufacturer: (p.trainingSessionId.assetId as any).manufacturer || '',
+          department: (p.trainingSessionId.assetId as any).department || '',
         } : undefined,
-        trainer: p.trainingSessionId.trainerId?._id ? {
-          id: p.trainingSessionId.trainerId._id.toString(),
-          name: p.trainingSessionId.trainerId.name || '',
-          email: p.trainingSessionId.trainerId.email || '',
+        trainer: (p.trainingSessionId.trainerId as any)?._id && typeof (p.trainingSessionId.trainerId as any).name !== 'undefined' ? {
+          id: (p.trainingSessionId.trainerId as any)._id.toString(),
+          name: (p.trainingSessionId.trainerId as any).name || '',
+          email: (p.trainingSessionId.trainerId as any).email || '',
         } : undefined,
       } : undefined,
     }))
@@ -95,12 +95,12 @@ export async function GET(
     const certificationList = certifications.map((c: any) => ({
       id: c._id.toString(),
       certificationNumber: c.certificationNumber,
-      asset: c.assetId?._id ? {
-        id: String(c.assetId.id || c.assetId._id),
-        name: c.assetId.name || '',
-        model: c.assetId.model || '',
-        manufacturer: c.assetId.manufacturer || '',
-        department: c.assetId.department || '',
+      asset: c.assetId?._id && typeof (c.assetId as any).name !== 'undefined' ? {
+        id: String((c.assetId as any).id || c.assetId._id),
+        name: (c.assetId as any).name || '',
+        model: (c.assetId as any).model || '',
+        manufacturer: (c.assetId as any).manufacturer || '',
+        department: (c.assetId as any).department || '',
       } : undefined,
       issuedDate: c.issuedDate.toISOString(),
       expiryDate: c.expiryDate?.toISOString(),
