@@ -49,12 +49,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (dateFrom || dateTo) {
-      query.sessionDate = {}
+      query.sessionDate = {} as { $gte?: Date; $lte?: Date }
       if (dateFrom) {
-        query.sessionDate.$gte = new Date(dateFrom)
+        (query.sessionDate as { $gte?: Date; $lte?: Date }).$gte = new Date(dateFrom)
       }
       if (dateTo) {
-        query.sessionDate.$lte = new Date(dateTo)
+        (query.sessionDate as { $gte?: Date; $lte?: Date }).$lte = new Date(dateTo)
       }
     }
 
@@ -208,20 +208,20 @@ export async function POST(request: NextRequest) {
     const transformedSession: ITrainingSession = {
       id: populatedSession!._id.toString(),
       assetId: populatedSession!.assetId?._id?.toString() || populatedSession!.assetId?.toString() || '',
-      asset: populatedSession!.assetId?._id ? {
-        id: populatedSession!.assetId.id || populatedSession!.assetId._id.toString(),
-        name: populatedSession!.assetId.name || '',
-        model: populatedSession!.assetId.model || '',
-        manufacturer: populatedSession!.assetId.manufacturer || '',
-        department: populatedSession!.assetId.department || '',
-        status: populatedSession!.assetId.status || 'Active',
-        serialNumber: populatedSession!.assetId.serialNumber || '',
-        location: populatedSession!.assetId.location || '',
-        purchaseDate: populatedSession!.assetId.purchaseDate?.toISOString() || '',
-        nextPmDate: populatedSession!.assetId.nextPmDate?.toISOString() || '',
-        value: populatedSession!.assetId.value || 0,
-        createdAt: populatedSession!.assetId.createdAt?.toISOString() || '',
-        updatedAt: populatedSession!.assetId.updatedAt?.toISOString() || '',
+      asset: populatedSession!.assetId?._id && typeof (populatedSession!.assetId as any).name !== 'undefined' ? {
+        id: String((populatedSession!.assetId as any).id || populatedSession!.assetId._id),
+        name: (populatedSession!.assetId as any).name || '',
+        model: (populatedSession!.assetId as any).model || '',
+        manufacturer: (populatedSession!.assetId as any).manufacturer || '',
+        department: (populatedSession!.assetId as any).department || '',
+        status: (populatedSession!.assetId as any).status || 'Active',
+        serialNumber: (populatedSession!.assetId as any).serialNumber || '',
+        location: (populatedSession!.assetId as any).location || '',
+        purchaseDate: (populatedSession!.assetId as any).purchaseDate?.toISOString() || '',
+        nextPmDate: (populatedSession!.assetId as any).nextPmDate?.toISOString() || '',
+        value: (populatedSession!.assetId as any).value || 0,
+        createdAt: (populatedSession!.assetId as any).createdAt?.toISOString() || '',
+        updatedAt: (populatedSession!.assetId as any).updatedAt?.toISOString() || '',
       } : undefined,
       sessionDate: populatedSession!.sessionDate.toISOString(),
       trainerId: populatedSession!.trainerId || '',

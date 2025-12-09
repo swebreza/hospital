@@ -44,12 +44,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (dateFrom || dateTo) {
-      query.date = {}
+      query.date = {} as { $gte?: Date; $lte?: Date }
       if (dateFrom) {
-        query.date.$gte = new Date(dateFrom)
+        (query.date as { $gte?: Date; $lte?: Date }).$gte = new Date(dateFrom)
       }
       if (dateTo) {
-        query.date.$lte = new Date(dateTo)
+        (query.date as { $gte?: Date; $lte?: Date }).$lte = new Date(dateTo)
       }
     }
 

@@ -10,6 +10,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean
   leftIcon?: LucideIcon
   rightIcon?: LucideIcon
+  fullWidth?: boolean
   children: React.ReactNode
 }
 
@@ -19,6 +20,7 @@ export default function Button({
   isLoading = false,
   leftIcon: LeftIcon,
   rightIcon: RightIcon,
+  fullWidth = false,
   className,
   disabled,
   children,
@@ -48,7 +50,13 @@ export default function Button({
 
   return (
     <button
-      className={clsx(baseStyles, variants[variant], sizes[size], className)}
+      className={clsx(
+        baseStyles,
+        variants[variant],
+        sizes[size],
+        fullWidth && 'w-full',
+        className
+      )}
       disabled={disabled || isLoading}
       {...props}
     >
