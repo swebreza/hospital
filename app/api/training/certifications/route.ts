@@ -247,9 +247,9 @@ export async function POST(request: NextRequest) {
 
     // Fetch participant and issuer details from Prisma
     const { prisma } = await import('@/lib/prisma')
-    const participant = populatedCertification!.participantId?._id ? await TrainingParticipant.findById(populatedCertification!.participantId._id).lean() : null
-    const participantUser = participant && participant.userId ? await prisma.user.findUnique({
-      where: { id: participant.userId },
+    const participantData = populatedCertification!.participantId?._id ? await TrainingParticipant.findById(populatedCertification!.participantId._id).lean() : null
+    const participantUser = participantData && participantData.userId ? await prisma.user.findUnique({
+      where: { id: participantData.userId },
       select: { id: true, name: true, email: true, department: true, role: true },
     }) : null
     const issuer = populatedCertification!.issuedBy ? await prisma.user.findUnique({

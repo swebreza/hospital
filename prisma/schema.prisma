@@ -72,6 +72,13 @@ enum ContractStatus {
   Cancelled
 }
 
+enum VendorStatus {
+  Pending
+  Active
+  Inactive
+  Suspended
+}
+
 enum CAPEXStatus {
   Draft
   Submitted
@@ -224,6 +231,7 @@ model Asset {
   contractAssets           ContractAsset[]
   trainingSessions         TrainingSession[]
   trainingCertifications   TrainingCertification[]
+  demoEquipment            DemoEquipment[]          @relation("DemoEquipmentAsset")
 
   @@index([department])
   @@index([status])
@@ -393,16 +401,17 @@ model InventoryItem {
 }
 
 model Vendor {
-  id              String   @id @default(uuid()) @map("_id")
+  id              String      @id @default(uuid()) @map("_id")
   name            String
-  contactPerson   String?  @map("contact_person")
+  contactPerson   String?     @map("contact_person")
   email           String?
   phone           String?
   address         String?
   rating          Float?
-  performanceScore Float?  @map("performance_score")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  performanceScore Float?     @map("performance_score")
+  status          VendorStatus @default(Pending)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
 
   // Relations
   calibrations    Calibration[]
@@ -410,8 +419,10 @@ model Vendor {
   contracts       Contract[]
   quotes          Quote[]
   workOrders      WorkOrder[]
+  demoEquipment   DemoEquipment[] @relation("DemoEquipmentVendor")
 
   @@index([name])
+  @@index([status])
   @@map("vendors")
 }
 
@@ -709,6 +720,10 @@ model DemoEquipment {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  // Relations
+  asset         Asset    @relation("DemoEquipmentAsset", fields: [assetId], references: [id])
+  vendor        Vendor?  @relation("DemoEquipmentVendor", fields: [vendorId], references: [id])
+
   @@index([assetId])
   @@index([department])
   @@index([inDate])
@@ -736,7 +751,6 @@ model TrainingSession {
   trainer         User                  @relation("TrainingSessionTrainer", fields: [trainerId], references: [id])
   participants    TrainingParticipant[]
   assessments     TrainingAssessment[]
-  certifications  TrainingCertification[]
 
   @@index([assetId])
   @@index([trainerId])
@@ -825,7 +839,6 @@ model TrainingCertification {
 
   @@index([participantId])
   @@index([assetId])
-  @@index([certificationNumber])
   @@index([status])
   @@index([expiryDate])
   @@index([participantId, assetId])

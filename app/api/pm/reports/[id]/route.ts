@@ -17,7 +17,7 @@ export async function GET(
     const contentType = format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     const extension = format === 'pdf' ? 'pdf' : 'xlsx'
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="pm-report-${id}.${extension}"`,

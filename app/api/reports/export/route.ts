@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       const excelData = convertReportToExcel(reportData, reportType)
       const buffer = exportMultipleSheets(excelData.sheets, `${reportTitle}.xlsx`)
 
-      return new NextResponse(buffer, {
+      return new NextResponse(new Uint8Array(buffer), {
         headers: {
           'Content-Type':
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       const pdfData = convertReportToPDF(reportData, reportType, reportTitle)
       const buffer = exportToPDF(pdfData)
 
-      return new NextResponse(buffer, {
+      return new NextResponse(new Uint8Array(buffer), {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${reportTitle}.pdf"`,

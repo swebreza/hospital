@@ -220,10 +220,13 @@ export interface Vendor {
   address?: string
   rating?: number
   performanceScore?: number
+  status?: VendorStatus
   escalationMatrix?: EscalationContact[]
   createdAt: string
   updatedAt: string
 }
+
+export type VendorStatus = 'Pending' | 'Active' | 'Inactive' | 'Suspended'
 
 export interface EscalationContact {
   level: number

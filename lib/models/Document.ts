@@ -61,7 +61,7 @@ DocumentSchema.index({ entityType: 1, entityId: 1 })
 DocumentSchema.index({ entityType: 1, documentCategory: 1 })
 DocumentSchema.index({ documentCategory: 1, entityId: 1 })
 
-const Document = mongoose.models.Document || mongoose.model<IDocument>('Document', DocumentSchema)
+const DocumentModel = mongoose.models.Document || mongoose.model<IDocument>('Document', DocumentSchema)
 
-export default Document
+export default DocumentModel
 
