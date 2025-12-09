@@ -1,13 +1,80 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import KPICard from '@/components/Dashboard/KPICard'
 import Charts from '@/components/Dashboard/Charts'
 import RecentActivity from '@/components/Dashboard/RecentActivity'
-import { Stethoscope, DollarSign, CheckCircle, AlertCircle } from 'lucide-react'
+import { Stethoscope, DollarSign, CheckCircle, AlertCircle, Clock, Package } from 'lucide-react'
 import { motion } from 'framer-motion'
 
+interface DashboardMetrics {
+  pmCompliance: {
+    rate: number
+    totalPMs: number
+    completedPMs: number
+    overduePMs: number
+  }
+  calibrationStatus: {
+    total: number
+    expired: number
+    expiringSoon: number
+    compliant: number
+  }
+  complaintTrends: {
+    open: number
+    inProgress: number
+    resolved: number
+    byPriority: {
+      low: number
+      medium: number
+      high: number
+      critical: number
+    }
+  }
+  downtimeStats: {
+    totalHours: number
+    totalEvents: number
+    averageHours: number
+    criticalAssetsAffected: number
+  }
+  inventoryAlerts: {
+    lowStock: number
+    outOfStock: number
+    criticalItems: number
+  }
+  amcCmcUpdates: {
+    expiringSoon: number
+    expired: number
+    renewalsNeeded: number
+  }
+}
+
 export default function Dashboard() {
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await fetch('/api/dashboard/metrics')
+        const result = await response.json()
+        if (result.success) {
+          setMetrics(result.data)
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard metrics:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMetrics()
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchMetrics, 60000)
+
+    return () => clearInterval(interval)
+  }, [])
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -46,38 +113,34 @@ export default function Dashboard() {
       >
         <motion.div variants={item}>
           <KPICard
-            title='Total Assets'
-            value={245}
-            icon={Stethoscope}
-            trend={{ value: 12, isPositive: true }}
-            color='var(--primary)'
-          />
-        </motion.div>
-        <motion.div variants={item}>
-          <KPICard
-            title='Asset Value'
-            value='₹ 2.4 Cr'
-            icon={DollarSign}
-            trend={{ value: 8, isPositive: true }}
-            color='#10b981'
-          />
-        </motion.div>
-        <motion.div variants={item}>
-          <KPICard
-            title='Compliance Rate'
-            value='94%'
+            title='PM Compliance'
+            value={loading ? '...' : `${metrics?.pmCompliance.rate.toFixed(1) || 0}%`}
             icon={CheckCircle}
-            trend={{ value: 3, isPositive: true }}
             color='#6366f1'
           />
         </motion.div>
         <motion.div variants={item}>
           <KPICard
+            title='Calibration Status'
+            value={loading ? '...' : `${metrics?.calibrationStatus.compliant || 0}/${metrics?.calibrationStatus.total || 0}`}
+            icon={CheckCircle}
+            color='#10b981'
+          />
+        </motion.div>
+        <motion.div variants={item}>
+          <KPICard
             title='Open Complaints'
-            value={18}
+            value={loading ? '...' : metrics?.complaintTrends.open || 0}
             icon={AlertCircle}
-            trend={{ value: 15, isPositive: false }}
             color='#ef4444'
+          />
+        </motion.div>
+        <motion.div variants={item}>
+          <KPICard
+            title='Downtime Hours'
+            value={loading ? '...' : `${metrics?.downtimeStats.totalHours.toFixed(1) || 0}h`}
+            icon={Clock}
+            color='#f59e0b'
           />
         </motion.div>
       </motion.div>

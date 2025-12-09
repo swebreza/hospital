@@ -1,9 +1,10 @@
 'use client'
 
 import React from 'react'
-// import { QRCodeSVG } from 'qrcode.react'; // TODO: Install qrcode.react package
-import { Download, QrCode } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { Download } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import { generateQRCodeData } from '@/lib/services/qrCode'
 
 interface QRCodeGeneratorProps {
   value: string
@@ -15,11 +16,11 @@ interface QRCodeGeneratorProps {
 export default function QRCodeGenerator({
   value,
   assetName,
-  size: _size = 200, // Will be used when QR code generation is implemented
+  size = 200,
   showDownload = true,
 }: QRCodeGeneratorProps) {
-  // Size parameter will be used when implementing QR code generation
-  void _size
+  const qrData = generateQRCodeData(value)
+
   const downloadQR = () => {
     const svg = document.getElementById('qr-code-svg')
     if (!svg) return
@@ -47,17 +48,14 @@ export default function QRCodeGenerator({
 
   return (
     <div className='flex flex-col items-center gap-4 p-6 bg-white rounded-lg border border-[var(--border-color)]'>
-      <div className='p-4 bg-white rounded-lg flex items-center justify-center w-48 h-48 border-2 border-dashed border-[var(--border-color)]'>
-        {/* TODO: Replace with QRCodeSVG when qrcode.react is installed */}
-        <div className='text-center'>
-          <QrCode
-            size={64}
-            className='mx-auto text-[var(--text-tertiary)] mb-2'
-          />
-          <p className='text-xs text-[var(--text-secondary)]'>
-            QR Code: {value}
-          </p>
-        </div>
+      <div className='p-4 bg-white rounded-lg flex items-center justify-center border-2 border-dashed border-[var(--border-color)]'>
+        <QRCodeSVG
+          id='qr-code-svg'
+          value={qrData}
+          size={size}
+          level='H'
+          includeMargin={true}
+        />
       </div>
 
       {assetName && (

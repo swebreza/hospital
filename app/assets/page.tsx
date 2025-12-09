@@ -6,6 +6,7 @@ import { useStore } from '@/lib/store'
 import AssetTable from '@/components/Assets/AssetTable'
 import AssetGridView from '@/components/Assets/AssetGridView'
 import AddAssetModal from '@/components/Assets/AddAssetModal'
+import BulkUploadModal from '@/components/Assets/BulkUploadModal'
 import AssetFilters, { FilterState } from '@/components/Assets/AssetFilters'
 import BulkActions from '@/components/Assets/BulkActions'
 import Button from '@/components/ui/Button'
@@ -16,8 +17,10 @@ import { Package } from 'lucide-react'
 
 export default function AssetsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([])
+  const [showExportMenu, setShowExportMenu] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     status: '',
@@ -25,6 +28,14 @@ export default function AssetsPage() {
     manufacturer: '',
     dateFrom: '',
     dateTo: '',
+    assetType: '',
+    modality: '',
+    criticality: '',
+    oem: '',
+    lifecycleState: '',
+    isMinorAsset: '',
+    farNumber: '',
+    replacementRecommended: '',
   })
 
   const { assets } = useStore()
@@ -49,6 +60,34 @@ export default function AssetsPage() {
       asset.manufacturer.toLowerCase() !== filters.manufacturer.toLowerCase()
     )
       return false
+    if (filters.assetType && asset.assetType !== filters.assetType) return false
+    if (
+      filters.modality &&
+      asset.modality?.toLowerCase() !== filters.modality.toLowerCase()
+    )
+      return false
+    if (filters.criticality && asset.criticality !== filters.criticality)
+      return false
+    if (filters.oem && asset.oem?.toLowerCase() !== filters.oem.toLowerCase())
+      return false
+    if (
+      filters.lifecycleState &&
+      asset.lifecycleState !== filters.lifecycleState
+    )
+      return false
+    if (filters.isMinorAsset) {
+      const isMinor = filters.isMinorAsset === 'true'
+      if (asset.isMinorAsset !== isMinor) return false
+    }
+    if (
+      filters.farNumber &&
+      asset.farNumber?.toLowerCase() !== filters.farNumber.toLowerCase()
+    )
+      return false
+    if (filters.replacementRecommended) {
+      const shouldReplace = filters.replacementRecommended === 'true'
+      if (asset.replacementRecommended !== shouldReplace) return false
+    }
 
     return true
   })
@@ -65,15 +104,166 @@ export default function AssetsPage() {
       manufacturer: '',
       dateFrom: '',
       dateTo: '',
+      assetType: '',
+      modality: '',
+      criticality: '',
+      oem: '',
+      lifecycleState: '',
+      isMinorAsset: '',
+      farNumber: '',
+      replacementRecommended: '',
     })
   }
 
-  const handleExport = async (format: 'excel' | 'pdf') => {
+  const handleExport = async (format: 'csv' | 'pdf') => {
     try {
-      // TODO: Implement export functionality
-      toast.success(`Exporting to ${format.toUpperCase()}...`)
-    } catch (error: any) {
-      toast.error(error.message || 'Export failed')
+      // Get assets to export (use filtered assets if available, otherwise all)
+      const assetsToExport = filteredAssets.length > 0 ? filteredAssets : assets
+
+      if (assetsToExport.length === 0) {
+        toast.error('No assets to export')
+        return
+      }
+
+      if (format === 'csv') {
+        // Export to CSV
+        const headers = [
+          'Asset ID',
+          'Name',
+          'Model',
+          'Manufacturer',
+          'Serial Number',
+          'Department',
+          'Location',
+          'Status',
+          'Type',
+          'Criticality',
+          'Lifecycle State',
+          'FAR Number',
+          'Purchase Date',
+          'Next PM Date',
+          'Value',
+          'Age (Years)',
+        ]
+
+        // Convert data to CSV format
+        const csvRows = [
+          headers.join(','), // Header row
+          ...assetsToExport.map((asset) => {
+            const row = [
+              asset.id,
+              `"${(asset.name || '').replace(/"/g, '""')}"`, // Escape quotes in CSV
+              `"${(asset.model || '').replace(/"/g, '""')}"`,
+              `"${(asset.manufacturer || '').replace(/"/g, '""')}"`,
+              `"${(asset.serialNumber || '').replace(/"/g, '""')}"`,
+              `"${(asset.department || '').replace(/"/g, '""')}"`,
+              `"${(asset.location || '').replace(/"/g, '""')}"`,
+              `"${(asset.status || '').replace(/"/g, '""')}"`,
+              `"${(asset.assetType || '').replace(/"/g, '""')}"`,
+              `"${(asset.criticality || '').replace(/"/g, '""')}"`,
+              `"${(asset.lifecycleState || asset.status || '').replace(
+                /"/g,
+                '""'
+              )}"`,
+              `"${(asset.farNumber || '').replace(/"/g, '""')}"`,
+              asset.purchaseDate || '',
+              asset.nextPmDate || '',
+              asset.value || 0,
+              asset.ageYears ? asset.ageYears.toFixed(1) : '',
+            ]
+            return row.join(',')
+          }),
+        ]
+
+        const csvContent = csvRows.join('\n')
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        link.setAttribute(
+          'download',
+          `assets_export_${new Date().toISOString().split('T')[0]}.csv`
+        )
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        toast.success(`Exported ${assetsToExport.length} asset(s) to CSV`)
+      } else if (format === 'pdf') {
+        // Export to PDF
+        const jsPDF = (await import('jspdf')).default
+
+        const headers = [
+          'ID',
+          'Name',
+          'Model',
+          'Department',
+          'Status',
+          'Type',
+          'Criticality',
+          'Purchase Date',
+          'Value',
+        ]
+
+        const data = assetsToExport.map((asset) => [
+          asset.id,
+          asset.name,
+          asset.model || '',
+          asset.department,
+          asset.status,
+          asset.assetType || '',
+          asset.criticality || '',
+          asset.purchaseDate || '',
+          asset.value ? `₹${asset.value.toLocaleString('en-IN')}` : '',
+        ])
+
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4',
+        })
+
+        // Add title
+        pdf.setFontSize(18)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('Assets Export', 14, 15)
+
+        // Add date
+        pdf.setFontSize(10)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 22)
+
+        // Add table using autoTable
+        const autoTable = (await import('jspdf-autotable')).default
+        autoTable(pdf, {
+          head: [headers],
+          body: data,
+          startY: 28,
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: {
+            fillColor: [66, 139, 202],
+            textColor: 255,
+            fontStyle: 'bold',
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
+        })
+
+        // Save PDF
+        pdf.save(`assets_export_${new Date().toISOString().split('T')[0]}.pdf`)
+
+        toast.success(`Exported ${assetsToExport.length} asset(s) to PDF`)
+      }
+    } catch (error: unknown) {
+      console.error('Export error:', error)
+      const errorMessage =
+        error instanceof Error ? error.message : 'Export failed'
+      toast.error(errorMessage)
     }
   }
 
@@ -109,26 +299,52 @@ export default function AssetsPage() {
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <Button 
-            variant='outline' 
-            size='sm' 
-            leftIcon={Upload}
-            onClick={() => {
-              toast.info('CSV Import', {
-                description: 'Please select a CSV file to import assets',
-              })
-            }}
-          >
-            Import CSV
-          </Button>
           <Button
             variant='outline'
             size='sm'
-            leftIcon={Download}
-            onClick={() => handleExport('excel')}
+            leftIcon={Upload}
+            onClick={() => setIsBulkUploadModalOpen(true)}
           >
-            Export
+            Import CSV
           </Button>
+          <div className='relative'>
+            <Button
+              variant='outline'
+              size='sm'
+              leftIcon={Download}
+              onClick={() => setShowExportMenu(!showExportMenu)}
+            >
+              Export
+            </Button>
+            {showExportMenu && (
+              <>
+                <div
+                  className='fixed inset-0 z-40'
+                  onClick={() => setShowExportMenu(false)}
+                />
+                <div className='absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-border z-50'>
+                  <button
+                    onClick={() => {
+                      handleExport('csv')
+                      setShowExportMenu(false)
+                    }}
+                    className='w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-hover rounded-t-lg transition-colors'
+                  >
+                    Export to CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleExport('pdf')
+                      setShowExportMenu(false)
+                    }}
+                    className='w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-hover rounded-b-lg transition-colors'
+                  >
+                    Export to PDF
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <Button
             variant='primary'
             leftIcon={Plus}
@@ -204,8 +420,8 @@ export default function AssetsPage() {
       ) : (
         <AssetGridView
           assets={filteredAssets}
-          onAssetClick={(asset) => {
-            // Open asset drawer
+          onAssetClick={() => {
+            // Open asset drawer - TODO: implement asset drawer
           }}
         />
       )}
@@ -214,6 +430,14 @@ export default function AssetsPage() {
       <AddAssetModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+      />
+      <BulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onSuccess={() => {
+          // Refresh assets list
+          window.location.reload()
+        }}
       />
     </div>
   )

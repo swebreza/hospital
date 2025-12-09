@@ -4,9 +4,9 @@
 This document outlines the database schema for the BME-AMS (Biomedical Equipment Asset Management System).
 
 ## Technology Stack
-- Database: PostgreSQL
-- ORM: Prisma (recommended) or raw SQL
-- Migration Tool: Prisma Migrate
+- Database: MongoDB (Atlas)
+- ODM: Mongoose
+- Connection: MongoDB Atlas connection string
 
 ## Tables
 
@@ -372,12 +372,106 @@ CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 - CAPEX proposals have multiple quotes and approvals
 - Documents are linked to various entities
 
+## MongoDB Collections (New Implementation)
+
+### assets (Enhanced)
+The assets collection has been extended with the following new fields:
+
+**New Fields:**
+- `assetType` (String) - Type classification (e.g., Diagnostic, Therapeutic, Life Support)
+- `modality` (String) - Medical modality (e.g., MRI, CT, Ultrasound)
+- `criticality` (String enum) - Criticality level (Critical, High, Medium, Low)
+- `oem` (String) - Original Equipment Manufacturer
+- `farNumber` (String, unique) - Fixed Asset Register number for financial alignment
+- `lifecycleState` (String enum) - Extended states (Active, In-Service, Spare, Disposed, Condemned, Demo, Under-Service)
+- `isMinorAsset` (Boolean) - Flag for minor asset tracking
+- `ageYears` (Number) - Calculated age (auto-calculated from purchaseDate)
+- `totalDowntimeHours` (Number) - Cumulative downtime
+- `totalServiceCost` (Number) - Cumulative service costs
+- `utilizationPercentage` (Number) - Equipment utilization rate
+- `replacementRecommended` (Boolean) - Flag for end-of-life
+- `replacementReason` (String) - Reason for replacement recommendation
+- `specifications` (Object) - Flexible specifications storage
+- `installationDate` (Date) - Installation date
+- `commissioningDate` (Date) - Commissioning date
+
+**Indexes:**
+- Single indexes: id, serialNumber, department, status, assetType, modality, criticality, oem, farNumber, lifecycleState, isMinorAsset, replacementRecommended
+- Compound indexes: (department, status), (assetType, modality), (criticality, lifecycleState), (isMinorAsset, department), (replacementRecommended, criticality)
+
+### asset_history (New Collection)
+Stores complete history of asset events.
+
+**Fields:**
+- `assetId` (ObjectId, ref: Asset) - Reference to asset
+- `eventType` (String enum) - Repair, Move, Calibration, StatusChange, PM, Complaint
+- `eventDate` (Date) - Date of event
+- `description` (String) - Event description
+- `performedBy` (ObjectId, ref: User) - User who performed the action
+- `oldValue` (String) - Previous value (for status changes)
+- `newValue` (String) - New value (for status changes)
+- `metadata` (Object) - Additional event-specific data
+- `createdAt` (Date) - Timestamp
+
+**Indexes:**
+- Single indexes: assetId, eventType, eventDate
+- Compound indexes: (assetId, eventDate), (assetId, eventType), (eventDate, eventType)
+
+### mea_checklists (New Collection)
+Stores MEA (Medical Equipment Assessment) checklists including IQ, PQ, OQ, Factory Calibration, and Training records.
+
+**Fields:**
+- `assetId` (ObjectId, ref: Asset) - Reference to asset
+- `checklistType` (String enum) - IQ, PQ, OQ, Factory_Calibration, Training
+- `performedDate` (Date) - Date checklist was performed
+- `performedBy` (ObjectId, ref: User) - User who performed the checklist
+- `status` (String enum) - Completed, Pending, Failed
+- `notes` (String) - Additional notes
+- `documents` (Array) - Array of document references with fileName, fileUrl, fileSize, mimeType
+- `createdAt` (Date) - Timestamp
+- `updatedAt` (Date) - Last update timestamp
+
+**Indexes:**
+- Single indexes: assetId, checklistType, status, performedDate
+- Compound indexes: (assetId, checklistType), (assetId, status)
+
+### asset_moves (New Collection)
+Tracks asset location and department moves.
+
+**Fields:**
+- `assetId` (ObjectId, ref: Asset) - Reference to asset
+- `fromLocation` (String) - Previous location
+- `toLocation` (String) - New location
+- `fromDepartment` (String) - Previous department
+- `toDepartment` (String) - New department
+- `moveDate` (Date) - Date of move
+- `movedBy` (ObjectId, ref: User) - User who moved the asset
+- `reason` (String) - Reason for move
+- `createdAt` (Date) - Timestamp
+
+**Indexes:**
+- Single indexes: assetId, moveDate
+- Compound indexes: (assetId, moveDate), (toDepartment, moveDate)
+
+### documents (Enhanced)
+The documents collection has been enhanced with:
+
+**New Fields:**
+- `documentCategory` (String enum) - Manual, Warranty, Training_Video, Certificate, IQ, PQ, OQ, Factory_Calibration
+- `thumbnailUrl` (String) - For video previews
+
+**Indexes:**
+- Single indexes: entityType, entityId, documentCategory
+- Compound indexes: (entityType, entityId), (entityType, documentCategory), (documentCategory, entityId)
+
 ## Notes
 
-1. All timestamps use TIMESTAMP type for consistency
-2. UUIDs are used for most IDs except assets and complaints which use custom formats
-3. Foreign keys have ON DELETE CASCADE where appropriate
-4. Indexes are created on frequently queried columns
-5. CHECK constraints ensure data integrity
-6. JSONB is used for flexible data storage (changes in audit_logs)
+1. All timestamps use Date type for consistency
+2. MongoDB ObjectIds are used for references, custom string IDs for assets and complaints
+3. Mongoose middleware handles automatic age calculation and history tracking
+4. Indexes are created on frequently queried fields and compound indexes for common query patterns
+5. Schema validation ensures data integrity through Mongoose validators
+6. Mixed/Schema.Types.Mixed is used for flexible data storage (specifications, metadata)
+7. Pre-save hooks automatically calculate asset age from purchaseDate
+8. All collections use timestamps: true for automatic createdAt and updatedAt fields
 

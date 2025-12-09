@@ -1,18 +1,18 @@
-// API route handler for individual asset operations
-
 import { NextRequest, NextResponse } from 'next/server'
-import type { Asset } from '@/lib/types'
-
-// Mock data - replace with actual database queries
-const mockAssets: Asset[] = []
+import connectDB from '@/lib/db/mongodb'
+import Asset from '@/lib/models/Asset'
+import type { Asset as IAsset } from '@/lib/types'
+import { trackAssetUpdate } from '@/lib/services/assetHistory'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await connectDB()
     const { id } = await params
-    const asset = mockAssets.find((a) => a.id === id)
+
+    const asset = await Asset.findOne({ id }).populate('createdBy', 'name email').lean()
 
     if (!asset) {
       return NextResponse.json(
@@ -21,11 +21,51 @@ export async function GET(
       )
     }
 
+    // Transform to match IAsset interface
+    const transformedAsset: IAsset = {
+      id: asset.id,
+      name: asset.name,
+      model: asset.model || '',
+      manufacturer: asset.manufacturer || '',
+      serialNumber: asset.serialNumber || '',
+      department: asset.department,
+      location: asset.location || '',
+      status: asset.status as IAsset['status'],
+      purchaseDate: asset.purchaseDate?.toISOString() || '',
+      nextPmDate: asset.nextPmDate?.toISOString() || '',
+      nextCalibrationDate: asset.nextCalibrationDate?.toISOString(),
+      value: asset.value || 0,
+      image: asset.imageUrl,
+      qrCode: asset.qrCode,
+      warrantyExpiry: asset.warrantyExpiry?.toISOString(),
+      amcExpiry: asset.amcExpiry?.toISOString(),
+      createdAt: asset.createdAt.toISOString(),
+      updatedAt: asset.updatedAt.toISOString(),
+      // Enhanced fields
+      assetType: asset.assetType,
+      modality: asset.modality,
+      criticality: asset.criticality as IAsset['criticality'],
+      oem: asset.oem,
+      farNumber: asset.farNumber,
+      lifecycleState: asset.lifecycleState as IAsset['lifecycleState'],
+      isMinorAsset: asset.isMinorAsset,
+      ageYears: asset.ageYears,
+      totalDowntimeHours: asset.totalDowntimeHours,
+      totalServiceCost: asset.totalServiceCost,
+      utilizationPercentage: asset.utilizationPercentage,
+      replacementRecommended: asset.replacementRecommended,
+      replacementReason: asset.replacementReason,
+      specifications: asset.specifications as Record<string, unknown>,
+      installationDate: asset.installationDate?.toISOString(),
+      commissioningDate: asset.commissioningDate?.toISOString(),
+    }
+
     return NextResponse.json({
       success: true,
-      data: asset,
+      data: transformedAsset,
     })
-  } catch {
+  } catch (error: unknown) {
+    console.error('Error fetching asset:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch asset' },
       { status: 500 }
@@ -38,33 +78,51 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await connectDB()
     const { id } = await params
     const body = await request.json()
-    const assetIndex = mockAssets.findIndex((a) => a.id === id)
 
-    if (assetIndex === -1) {
+    const asset = await Asset.findOne({ id })
+
+    if (!asset) {
       return NextResponse.json(
         { success: false, error: 'Asset not found' },
         { status: 404 }
       )
     }
 
-    // Update asset
-    const updatedAsset: Asset = {
-      ...mockAssets[assetIndex],
-      ...body,
-      updatedAt: new Date().toISOString(),
-    }
+    // Track changes for history
+    const changes: Record<string, { old: unknown; new: unknown }> = {}
+    const performedBy = body.performedBy || body.updatedBy
 
-    mockAssets[assetIndex] = updatedAsset
+    Object.keys(body).forEach((key) => {
+      if (key !== 'performedBy' && key !== 'updatedBy' && key !== '_id' && key !== '__v') {
+        const oldValue = asset.get(key)
+        const newValue = body[key]
+        if (oldValue !== newValue) {
+          changes[key] = { old: oldValue, new: newValue }
+        }
+      }
+    })
+
+    // Update asset
+    Object.assign(asset, body)
+    await asset.save()
+
+    // Create history entries for changes
+    if (Object.keys(changes).length > 0 && performedBy) {
+      await trackAssetUpdate(id, changes, performedBy)
+    }
 
     return NextResponse.json({
       success: true,
-      data: updatedAsset,
+      data: asset.toObject(),
     })
-  } catch {
+  } catch (error: unknown) {
+    console.error('Error updating asset:', error)
+    const err = error as { message?: string }
     return NextResponse.json(
-      { success: false, error: 'Failed to update asset' },
+      { success: false, error: err.message || 'Failed to update asset' },
       { status: 500 }
     )
   }
@@ -75,23 +133,24 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await connectDB()
     const { id } = await params
-    const assetIndex = mockAssets.findIndex((a) => a.id === id)
 
-    if (assetIndex === -1) {
+    const asset = await Asset.findOneAndDelete({ id })
+
+    if (!asset) {
       return NextResponse.json(
         { success: false, error: 'Asset not found' },
         { status: 404 }
       )
     }
 
-    mockAssets.splice(assetIndex, 1)
-
     return NextResponse.json({
       success: true,
       message: 'Asset deleted successfully',
     })
-  } catch {
+  } catch (error: unknown) {
+    console.error('Error deleting asset:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete asset' },
       { status: 500 }

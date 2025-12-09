@@ -1,10 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, FileText, Clock, File, Download } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Asset } from '@/lib/store'
 import Button from '@/components/ui/Button'
+import AssetHistoryTimeline from './AssetHistoryTimeline'
+import { assetsApi } from '@/lib/api/assets'
+import type { AssetHistory } from '@/lib/types'
 
 interface AssetDrawerProps {
   isOpen: boolean
@@ -20,6 +23,48 @@ export default function AssetDrawer({
   const [activeTab, setActiveTab] = useState<'info' | 'history' | 'docs'>(
     'info'
   )
+  const [history, setHistory] = useState<AssetHistory[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const loadedAssetIdRef = React.useRef<string | null>(null)
+
+  useEffect(() => {
+    // Only fetch if we have an asset ID, are on history tab, and haven't loaded this asset yet
+    if (asset?.id && activeTab === 'history' && asset.id !== loadedAssetIdRef.current) {
+      setLoadingHistory(true)
+      loadedAssetIdRef.current = asset.id
+      assetsApi
+        .getHistory(asset.id, { groupBy: 'timeline' })
+        .then((response) => {
+          if (response.success && response.data) {
+            if (Array.isArray(response.data)) {
+              setHistory(response.data)
+            } else {
+              // If grouped by type, flatten it
+              const allHistory: AssetHistory[] = []
+              Object.values(response.data).forEach((events) => {
+                if (Array.isArray(events)) {
+                  allHistory.push(...events)
+                }
+              })
+              setHistory(allHistory.sort((a, b) => 
+                new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
+              ))
+            }
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load history:', error)
+          loadedAssetIdRef.current = null // Reset on error so we can retry
+        })
+        .finally(() => {
+          setLoadingHistory(false)
+        })
+    } else if (!asset?.id || activeTab !== 'history') {
+      // Clear history when switching tabs or closing drawer
+      setHistory([])
+      loadedAssetIdRef.current = null
+    }
+  }, [asset?.id, activeTab])
 
   if (!asset) return null
 
@@ -107,6 +152,36 @@ export default function AssetDrawer({
                     />
                     <InfoItem label='Location' value={asset.location} />
                     <InfoItem label='Status' value={asset.status} isBadge />
+                    {asset.assetType && (
+                      <InfoItem label='Asset Type' value={asset.assetType} />
+                    )}
+                    {asset.modality && (
+                      <InfoItem label='Modality' value={asset.modality} />
+                    )}
+                    {asset.criticality && (
+                      <InfoItem
+                        label='Criticality'
+                        value={asset.criticality}
+                        isBadge
+                      />
+                    )}
+                    {asset.oem && <InfoItem label='OEM' value={asset.oem} />}
+                    {asset.farNumber && (
+                      <InfoItem label='FAR Number' value={asset.farNumber} />
+                    )}
+                    {asset.lifecycleState && (
+                      <InfoItem
+                        label='Lifecycle State'
+                        value={asset.lifecycleState}
+                        isBadge
+                      />
+                    )}
+                    {asset.ageYears !== undefined && (
+                      <InfoItem
+                        label='Age'
+                        value={`${asset.ageYears.toFixed(1)} years`}
+                      />
+                    )}
                   </div>
 
                   <div>
@@ -124,24 +199,14 @@ export default function AssetDrawer({
 
               {activeTab === 'history' && (
                 <div className='space-y-4'>
-                  <HistoryItem
-                    date='2024-01-15'
-                    title='Preventive Maintenance'
-                    user='John Doe'
-                    status='Completed'
-                  />
-                  <HistoryItem
-                    date='2023-11-20'
-                    title='Calibration'
-                    user='External Vendor'
-                    status='Verified'
-                  />
-                  <HistoryItem
-                    date='2023-08-05'
-                    title='Breakdown Repair'
-                    user='Sarah Smith'
-                    status='Resolved'
-                  />
+                  {loadingHistory ? (
+                    <div className='text-center py-8'>
+                      <div className='w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2' />
+                      <p className='text-text-secondary'>Loading history...</p>
+                    </div>
+                  ) : (
+                    <AssetHistoryTimeline history={history} groupByDate={true} />
+                  )}
                 </div>
               )}
 
@@ -194,35 +259,6 @@ function InfoItem({
   )
 }
 
-function HistoryItem({
-  date,
-  title,
-  user,
-  status,
-}: {
-  date: string
-  title: string
-  user: string
-  status: string
-}) {
-  return (
-    <div className='flex gap-4 p-3 border border-border rounded-lg bg-bg-secondary'>
-      <div className='flex-shrink-0 w-10 h-10 bg-white rounded-full flex items-center justify-center border border-border text-text-tertiary'>
-        <Clock size={18} />
-      </div>
-      <div className='flex-1'>
-        <div className='flex justify-between'>
-          <h4 className='text-sm font-bold text-text-primary'>{title}</h4>
-          <span className='text-xs text-text-secondary'>{date}</span>
-        </div>
-        <p className='text-xs text-text-secondary mt-1'>Performed by {user}</p>
-      </div>
-      <span className='text-xs font-medium text-success self-center bg-success-light px-2 py-1 rounded'>
-        {status}
-      </span>
-    </div>
-  )
-}
 
 function DocItem({ name, size }: { name: string; size: string }) {
   return (

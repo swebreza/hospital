@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  GraduationCap,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Tooltip from '@/components/ui/Tooltip'
@@ -34,6 +35,7 @@ const menuItems: MenuItem[] = [
   { name: 'Assets', icon: Stethoscope, href: '/assets' },
   { name: 'Preventive Maint.', icon: ClipboardCheck, href: '/pm' },
   { name: 'Calibration', icon: Activity, href: '/calibration' },
+  { name: 'Training', icon: GraduationCap, href: '/training' },
   { name: 'Breakdowns', icon: AlertTriangle, href: '/complaints', badge: 3 },
   { name: 'Inventory', icon: Package, href: '/inventory' },
   { name: 'Vendors', icon: Users, href: '/vendors' },

@@ -7,7 +7,7 @@ import { Asset } from '@/lib/types'
 
 interface BulkActionsProps {
   selectedAssets: Asset[]
-  onExport: (format: 'excel' | 'pdf') => void
+  onExport: (format: 'csv' | 'pdf') => void
   onDelete: () => void
   onGenerateQR: () => void
   onClearSelection: () => void
@@ -44,10 +44,10 @@ export default function BulkActions({
         <Button
           variant='outline'
           size='sm'
-          onClick={() => onExport('excel')}
+          onClick={() => onExport('csv')}
           leftIcon={Download}
         >
-          Export Excel
+          Export CSV
         </Button>
 
         <Button

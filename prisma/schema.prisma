@@ -1,0 +1,833 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = []
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  biomedical_engineer
+  technician
+  manager
+  viewer
+}
+
+enum AssetStatus {
+  Active
+  Maintenance
+  Breakdown
+  Condemned
+  Standby
+}
+
+enum PMStatus {
+  Scheduled
+  InProgress
+  Completed
+  Overdue
+  Cancelled
+}
+
+enum CalibrationStatus {
+  Scheduled
+  InProgress
+  Completed
+  Expired
+  Overdue
+}
+
+enum ComplaintPriority {
+  Low
+  Medium
+  High
+  Critical
+}
+
+enum ComplaintStatus {
+  Open
+  InProgress
+  Resolved
+  Closed
+  Escalated
+}
+
+enum ContractType {
+  AMC
+  CMC
+  Warranty
+  Service
+}
+
+enum ContractStatus {
+  Active
+  Expired
+  Renewed
+  Cancelled
+}
+
+enum CAPEXStatus {
+  Draft
+  Submitted
+  UnderReview
+  Approved
+  Rejected
+  Procured
+}
+
+enum ApprovalStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum WorkOrderStatus {
+  Created
+  Assigned
+  InProgress
+  OnHold
+  Completed
+  Cancelled
+}
+
+enum NotificationType {
+  PM_REMINDER
+  CAL_REMINDER
+  PM_OVERDUE
+  CAL_OVERDUE
+  COMPLAINT_ASSIGNED
+  COMPLAINT_ESCALATED
+  PM_ACKNOWLEDGEMENT_REQUIRED
+  COMPLAINT_ACKNOWLEDGEMENT_REQUIRED
+  WORK_ORDER_ASSIGNED
+  CONTRACT_EXPIRING
+  ESCALATION
+  SYSTEM
+  TRAINING_REMINDER
+  CERTIFICATION_EXPIRING
+}
+
+enum TrainingSessionStatus {
+  Scheduled
+  InProgress
+  Completed
+  Cancelled
+}
+
+enum AttendanceStatus {
+  Registered
+  Attended
+  Absent
+  Cancelled
+}
+
+enum CertificationStatus {
+  NotCertified
+  Certified
+  Expired
+  RecertificationDue
+}
+
+enum AssessmentType {
+  PreTest
+  PostTest
+}
+
+enum TrainingCertificationStatus {
+  Active
+  Expired
+  Revoked
+  Renewed
+}
+
+enum ChecklistItemType {
+  boolean
+  text
+  number
+}
+
+model User {
+  id            String    @id @default(uuid()) @map("_id")
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  role          UserRole
+  department    String?
+  avatarUrl     String?   @map("avatar_url")
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLogin     DateTime? @map("last_login")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  createdAssets          Asset[]                    @relation("AssetCreator")
+  assignedPMs            PreventiveMaintenance[]    @relation("PMTechnician")
+  reportedComplaints     Complaint[]                 @relation("ComplaintReporter")
+  assignedComplaints     Complaint[]                 @relation("ComplaintAssignee")
+  correctiveMaintenances CorrectiveMaintenance[]
+  notifications          Notification[]
+  approvals              Approval[]
+  auditLogs              AuditLog[]
+  uploadedDocuments      Document[]                  @relation("DocumentUploader")
+  submittedCAPEX         CAPEXProposal[]            @relation("CAPEXSubmitter")
+  workOrders             WorkOrder[]                @relation("WorkOrderAssignee")
+  userAcknowledgements   UserAcknowledgement[]
+  editRequests           EditRequest[]               @relation("EditRequestCreator")
+  approvedEditRequests   EditRequest[]               @relation("EditRequestApprover")
+  trainingSessionsAsTrainer TrainingSession[]        @relation("TrainingSessionTrainer")
+  trainingParticipants   TrainingParticipant[]
+  trainingAssessmentsGraded TrainingAssessment[]     @relation("AssessmentGradedBy")
+  certificationsIssued   TrainingCertification[]     @relation("CertificationIssuer")
+
+  @@index([role])
+  @@map("users")
+}
+
+model Asset {
+  id                  String    @id @map("_id")
+  name                String
+  model               String?
+  manufacturer        String?
+  serialNumber        String?  @unique @map("serial_number")
+  department          String
+  location            String?
+  status              AssetStatus
+  purchaseDate        DateTime? @map("purchase_date")
+  nextPmDate          DateTime? @map("next_pm_date")
+  nextCalibrationDate DateTime? @map("next_calibration_date")
+  value               Float?
+  imageUrl            String?   @map("image_url")
+  qrCode              String?   @map("qr_code")
+  warrantyExpiry      DateTime? @map("warranty_expiry")
+  amcExpiry           DateTime? @map("amc_expiry")
+  createdBy           String?   @map("created_by")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  creator                  User?                    @relation("AssetCreator", fields: [createdBy], references: [id])
+  preventiveMaintenances   PreventiveMaintenance[]
+  calibrations             Calibration[]
+  complaints               Complaint[]
+  correctiveMaintenances   CorrectiveMaintenance[]
+  workOrders               WorkOrder[]
+
+
+
+
+  contractAssets           ContractAsset[]
+  trainingSessions         TrainingSession[]
+  trainingCertifications   TrainingCertification[]
+
+  @@index([department])
+  @@index([status])
+  @@map("assets")
+}
+
+model PreventiveMaintenance {
+  id            String    @id @default(uuid()) @map("_id")
+  assetId       String    @map("asset_id")
+  scheduledDate DateTime  @map("scheduled_date")
+  completedDate DateTime? @map("completed_date")
+  technicianId  String?   @map("technician_id")
+  status        PMStatus
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  asset       Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  technician  User?            @relation("PMTechnician", fields: [technicianId], references: [id])
+  checklist   PMChecklistItem[]
+
+  @@index([assetId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("preventive_maintenances")
+}
+
+model PMChecklistItem {
+  id           String            @id @default(uuid()) @map("_id")
+  pmId         String            @map("pm_id")
+  task         String
+  type         ChecklistItemType
+  resultBoolean Boolean?          @map("result_boolean")
+  resultText   String?           @map("result_text")
+  resultNumber Float?              @map("result_number")
+  notes        String?
+  orderIndex   Int               @map("order_index")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  pm PreventiveMaintenance @relation(fields: [pmId], references: [id], onDelete: Cascade)
+
+  @@index([pmId])
+  @@map("pm_checklist_items")
+}
+
+model Calibration {
+  id              String            @id @default(uuid()) @map("_id")
+  assetId         String            @map("asset_id")
+  calibrationDate DateTime          @map("calibration_date")
+  nextDueDate     DateTime          @map("next_due_date")
+  vendorId        String?           @map("vendor_id")
+  certificateUrl  String?           @map("certificate_url")
+  status          CalibrationStatus
+  notes           String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  asset  Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  vendor Vendor? @relation(fields: [vendorId], references: [id])
+
+  @@index([assetId])
+  @@index([nextDueDate])
+  @@index([status])
+  @@map("calibrations")
+}
+
+model Complaint {
+  id            String           @id @map("_id")
+  assetId       String           @map("asset_id")
+  title         String
+  description   String
+  priority      ComplaintPriority
+  status        ComplaintStatus
+  reportedBy   String           @map("reported_by")
+  assignedTo   String?          @map("assigned_to")
+  reportedAt   DateTime         @default(now()) @map("reported_at")
+  respondedAt  DateTime?        @map("responded_at")
+  resolvedAt   DateTime?        @map("resolved_at")
+  downtimeMinutes Int?           @map("downtime_minutes")
+  slaDeadline  DateTime?        @map("sla_deadline")
+  rootCause    String?          @map("root_cause")
+  resolution   String?
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  asset                 Asset                 @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  reporter              User                  @relation("ComplaintReporter", fields: [reportedBy], references: [id])
+  assignee              User?                 @relation("ComplaintAssignee", fields: [assignedTo], references: [id])
+  correctiveMaintenances CorrectiveMaintenance[]
+  workOrders            WorkOrder[]
+
+  @@index([assetId])
+  @@index([status])
+  @@index([priority])
+  @@index([reportedBy])
+  @@map("complaints")
+}
+
+model CorrectiveMaintenance {
+  id          String    @id @default(uuid()) @map("_id")
+  complaintId String?   @map("complaint_id")
+  assetId     String    @map("asset_id")
+  repairDate  DateTime  @map("repair_date")
+  technicianId String    @map("technician_id")
+  laborHours  Float?    @map("labor_hours")
+  totalCost   Float?    @map("total_cost")
+  rootCause   String?   @map("root_cause")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  complaint   Complaint?        @relation(fields: [complaintId], references: [id])
+  asset       Asset             @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  technician  User              @relation(fields: [technicianId], references: [id])
+  spareParts  SparePartUsage[]
+
+  @@index([assetId])
+  @@index([complaintId])
+  @@map("corrective_maintenances")
+}
+
+model SparePartUsage {
+  id        String   @id @default(uuid()) @map("_id")
+  cmId      String   @map("cm_id")
+  partId    String   @map("part_id")
+  quantity  Int
+  unitCost  Float    @map("unit_cost")
+  totalCost Float    @map("total_cost")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  correctiveMaintenance CorrectiveMaintenance @relation(fields: [cmId], references: [id], onDelete: Cascade)
+  inventoryItem         InventoryItem        @relation(fields: [partId], references: [id])
+
+  @@index([cmId])
+  @@map("spare_part_usage")
+}
+
+model InventoryItem {
+  id        String   @id @default(uuid()) @map("_id")
+  name      String
+  category  String?
+  partNumber String? @map("part_number")
+  stock     Int      @default(0)
+  minLevel  Int      @default(0) @map("min_level")
+  maxLevel  Int?     @map("max_level")
+  unit      String
+  unitCost  Float?   @map("unit_cost")
+  vendorId  String?  @map("vendor_id")
+  location  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vendor      Vendor?          @relation(fields: [vendorId], references: [id])
+  spareParts  SparePartUsage[]
+  workOrderSpareParts WorkOrderSparePart[] @relation("WorkOrderSpareParts")
+
+  @@index([category])
+  @@index([stock])
+  @@map("inventory_items")
+}
+
+model Vendor {
+  id              String   @id @default(uuid()) @map("_id")
+  name            String
+  contactPerson   String?  @map("contact_person")
+  email           String?
+  phone           String?
+  address         String?
+  rating          Float?
+  performanceScore Float?  @map("performance_score")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  calibrations    Calibration[]
+  inventoryItems  InventoryItem[]
+  contracts       Contract[]
+  quotes          Quote[]
+  workOrders      WorkOrder[]
+
+  @@index([name])
+  @@map("vendors")
+}
+
+model Contract {
+  id          String        @id @default(uuid()) @map("_id")
+  vendorId    String        @map("vendor_id")
+  type        ContractType
+  startDate   DateTime      @map("start_date")
+  endDate     DateTime      @map("end_date")
+  value       Float?
+  renewalDate DateTime?     @map("renewal_date")
+  status      ContractStatus
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  vendor       Vendor         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  contractAssets ContractAsset[]
+
+  @@index([vendorId])
+  @@index([endDate])
+  @@index([status])
+  @@map("contracts")
+}
+
+model ContractAsset {
+  id         String   @id @default(uuid()) @map("_id")
+  contractId String   @map("contract_id")
+  assetId    String   @map("asset_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  asset    Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, assetId])
+  @@map("contract_assets")
+}
+
+model CAPEXProposal {
+  id                String    @id @default(uuid()) @map("_id")
+  title             String
+  description       String?
+  department        String
+  budget            Float
+  technicalComparison String? @map("technical_comparison")
+  clinicalComparison String?   @map("clinical_comparison")
+  status            CAPEXStatus
+  submittedBy       String?   @map("submitted_by")
+  submittedAt       DateTime? @map("submitted_at")
+  roi               Float?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  submitter User?   @relation("CAPEXSubmitter", fields: [submittedBy], references: [id])
+  quotes    Quote[]
+  approvals Approval[]
+
+  @@index([status])
+  @@index([department])
+  @@map("capex_proposals")
+}
+
+model Quote {
+  id         String   @id @default(uuid()) @map("_id")
+  capexId    String   @map("capex_id")
+  vendorId   String?  @map("vendor_id")
+  amount     Float
+  documentUrl String? @map("document_url")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  capex CAPEXProposal @relation(fields: [capexId], references: [id], onDelete: Cascade)
+  vendor Vendor?      @relation(fields: [vendorId], references: [id])
+
+  @@index([capexId])
+  @@map("quotes")
+}
+
+model Approval {
+  id         String         @id @default(uuid()) @map("_id")
+  capexId    String         @map("capex_id")
+  approverId String         @map("approver_id")
+  level      Int
+  status     ApprovalStatus
+  comments   String?
+  approvedAt DateTime?      @map("approved_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  capex    CAPEXProposal @relation(fields: [capexId], references: [id], onDelete: Cascade)
+  approver User          @relation(fields: [approverId], references: [id])
+
+  @@index([capexId])
+  @@index([status])
+  @@map("approvals")
+}
+
+model Document {
+  id          String   @id @default(uuid()) @map("_id")
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  documentType String  @map("document_type")
+  fileName    String   @map("file_name")
+  fileUrl     String   @map("file_url")
+  fileSize    BigInt?  @map("file_size")
+  mimeType    String?  @map("mime_type")
+  uploadedBy  String?  @map("uploaded_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  uploader User? @relation("DocumentUploader", fields: [uploadedBy], references: [id])
+
+  @@index([entityType, entityId])
+  @@map("documents")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @map("_id")
+  userId     String?  @map("user_id")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  changes    Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// New tables for maintenance system
+
+model Notification {
+  id         String         @id @default(uuid()) @map("_id")
+  userId     String         @map("user_id")
+  type       NotificationType
+  title      String
+  message    String?
+  entityType String?        @map("entity_type")
+  entityId   String?        @map("entity_id")
+  isRead     Boolean        @default(false) @map("is_read")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model WorkOrder {
+  id            String          @id @map("_id")
+  complaintId  String?         @map("complaint_id")
+  assetId      String           @map("asset_id")
+  assignedTo   String?          @map("assigned_to")
+  assignedVendorId String?      @map("assigned_vendor_id")
+  status       WorkOrderStatus
+  laborHours   Float?           @map("labor_hours")
+  totalCost    Float?           @map("total_cost")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  complaint     Complaint?  @relation(fields: [complaintId], references: [id])
+  asset         Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assignee      User?       @relation("WorkOrderAssignee", fields: [assignedTo], references: [id])
+  vendor        Vendor?     @relation(fields: [assignedVendorId], references: [id])
+  activities    WorkOrderActivity[]
+  spareParts    WorkOrderSparePart[] @relation("WorkOrderSpareParts")
+
+  @@index([complaintId])
+  @@index([assetId])
+  @@index([status])
+  @@map("work_orders")
+}
+
+model WorkOrderActivity {
+  id          String   @id @default(uuid()) @map("_id")
+  workOrderId String   @map("work_order_id")
+  activity    String
+  performedBy String?  @map("performed_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@map("work_order_activities")
+}
+
+model WorkOrderSparePart {
+  id         String   @id @default(uuid()) @map("_id")
+  workOrderId String  @map("work_order_id")
+  partId     String   @map("part_id")
+  quantity   Int
+  unitCost   Float    @map("unit_cost")
+  totalCost  Float    @map("total_cost")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workOrder    WorkOrder     @relation("WorkOrderSpareParts", fields: [workOrderId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation("WorkOrderSpareParts", fields: [partId], references: [id])
+
+  @@index([workOrderId])
+  @@map("work_order_spare_parts")
+}
+
+model PMTemplate {
+  id              String   @id @default(uuid()) @map("_id")
+  equipmentType   String   @map("equipment_type")
+  manufacturer    String?
+  frequencyMonths Int      @map("frequency_months")
+  checklistTemplate Json   @map("checklist_template")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([equipmentType])
+  @@index([manufacturer])
+  @@map("pm_templates")
+}
+
+model EscalationRule {
+  id          String   @id @default(uuid()) @map("_id")
+  entityType  String   @map("entity_type")
+  daysOverdue Int      @map("days_overdue")
+  escalationLevel Int  @map("escalation_level")
+  notifyUserIds String[] @map("notify_user_ids")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([entityType])
+  @@index([isActive])
+  @@map("escalation_rules")
+}
+
+model UserAcknowledgement {
+  id          String   @id @default(uuid()) @map("_id")
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  userId      String   @map("user_id")
+  acknowledgedAt DateTime? @map("acknowledged_at")
+  status      String
+  comments    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("user_acknowledgements")
+}
+
+model EditRequest {
+  id          String   @id @default(uuid()) @map("_id")
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  requestedBy String   @map("requested_by")
+  approvedBy  String?   @map("approved_by")
+  changes     Json
+  status      String   // Pending, Approved, Rejected
+  comments    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  requester User?  @relation("EditRequestCreator", fields: [requestedBy], references: [id])
+  approver  User?  @relation("EditRequestApprover", fields: [approvedBy], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([status])
+  @@map("edit_requests")
+}
+
+model DemoEquipment {
+  id            String   @id @default(uuid()) @map("_id")
+  assetId       String   @map("asset_id")
+  vendorId      String?  @map("vendor_id")
+  department    String
+  inDate        DateTime @map("in_date")
+  outDate       DateTime? @map("out_date")
+  demoSticker   String?  @map("demo_sticker")
+  demoFormUrl   String?  @map("demo_form_url")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([assetId])
+  @@index([department])
+  @@index([inDate])
+  @@map("demo_equipment")
+}
+
+model TrainingSession {
+  id              String                @id @default(uuid()) @map("_id")
+  assetId         String                @map("asset_id")
+  sessionDate     DateTime              @map("session_date")
+  trainerId       String                @map("trainer_id")
+  title           String
+  description     String?
+  department      String
+  location        String?
+  durationMinutes Int?                  @map("duration_minutes")
+  status          TrainingSessionStatus
+  notes           String?
+  documents       Json?                 // Array of document objects
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  asset           Asset                 @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  trainer         User                  @relation("TrainingSessionTrainer", fields: [trainerId], references: [id])
+  participants    TrainingParticipant[]
+  assessments     TrainingAssessment[]
+  certifications  TrainingCertification[]
+
+  @@index([assetId])
+  @@index([trainerId])
+  @@index([sessionDate])
+  @@index([status])
+  @@index([department, status])
+  @@map("training_sessions")
+}
+
+model TrainingParticipant {
+  id                    String              @id @default(uuid()) @map("_id")
+  trainingSessionId     String              @map("training_session_id")
+  userId                String              @map("user_id")
+  attendanceStatus      AttendanceStatus    @map("attendance_status")
+  certificationStatus   CertificationStatus @map("certification_status")
+  certifiedAt           DateTime?           @map("certified_at")
+  certificationExpiryDate DateTime?         @map("certification_expiry_date")
+  attendedAt            DateTime?           @map("attended_at")
+  notes                 String?
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  trainingSession       TrainingSession     @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  user                  User                @relation(fields: [userId], references: [id])
+  assessments           TrainingAssessment[]
+  certifications        TrainingCertification[]
+
+  @@unique([trainingSessionId, userId])
+  @@index([trainingSessionId])
+  @@index([userId])
+  @@index([attendanceStatus])
+  @@index([certificationStatus])
+  @@index([certificationExpiryDate])
+  @@map("training_participants")
+}
+
+model TrainingAssessment {
+  id                String          @id @default(uuid()) @map("_id")
+  trainingSessionId String          @map("training_session_id")
+  participantId     String          @map("participant_id")
+  assessmentType    AssessmentType  @map("assessment_type")
+  score             Float?
+  maxScore          Float?          @default(100) @map("max_score")
+  questions         Json?           // Array of question objects
+  answers           Json?           // Array of answer objects
+  documentUrl       String?         @map("document_url")
+  completedAt       DateTime?       @map("completed_at")
+  gradedBy          String?         @map("graded_by")
+  notes             String?
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  trainingSession   TrainingSession @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  participant       TrainingParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  grader            User?          @relation("AssessmentGradedBy", fields: [gradedBy], references: [id])
+
+  @@unique([trainingSessionId, participantId, assessmentType])
+  @@index([trainingSessionId])
+  @@index([participantId])
+  @@index([assessmentType])
+  @@map("training_assessments")
+}
+
+model TrainingCertification {
+  id                    String                      @id @default(uuid()) @map("_id")
+  participantId         String                      @map("participant_id")
+  assetId               String                      @map("asset_id")
+  certificationNumber   String                      @unique @map("certification_number")
+  issuedDate            DateTime                    @default(now()) @map("issued_date")
+  expiryDate            DateTime?                   @map("expiry_date")
+  status                TrainingCertificationStatus
+  certificateUrl        String?                     @map("certificate_url")
+  issuedBy              String                      @map("issued_by")
+  preTestScore          Float?                      @map("pre_test_score")
+  postTestScore         Float?                      @map("post_test_score")
+  improvementPercentage Float?                      @map("improvement_percentage")
+  createdAt             DateTime                    @default(now()) @map("created_at")
+  updatedAt             DateTime                    @updatedAt @map("updated_at")
+
+  // Relations
+  participant           TrainingParticipant         @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  asset                 Asset                       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  issuer                User                        @relation("CertificationIssuer", fields: [issuedBy], references: [id])
+
+  @@index([participantId])
+  @@index([assetId])
+  @@index([certificationNumber])
+  @@index([status])
+  @@index([expiryDate])
+  @@index([participantId, assetId])
+  @@map("training_certifications")
+}

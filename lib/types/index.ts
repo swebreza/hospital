@@ -37,6 +37,35 @@ export interface Asset {
   amcExpiry?: string
   createdAt: string
   updatedAt: string
+  
+  // Enhanced fields for Asset Inventory Management
+  assetType?: string // Type classification (e.g., Diagnostic, Therapeutic, Life Support)
+  modality?: string // Medical modality (e.g., MRI, CT, Ultrasound)
+  criticality?: CriticalityLevel
+  oem?: string // Original Equipment Manufacturer
+  farNumber?: string // Fixed Asset Register number
+  lifecycleState?: LifecycleState
+  isMinorAsset?: boolean
+  ageYears?: number
+  totalDowntimeHours?: number
+  totalServiceCost?: number
+  utilizationPercentage?: number
+  replacementRecommended?: boolean
+  replacementReason?: string
+  specifications?: Record<string, unknown> // Flexible specifications storage
+  installationDate?: string
+  commissioningDate?: string
+  
+  // Category object for easier access
+  category?: AssetCategory
+  
+  // Lifecycle object
+  lifecycle?: {
+    state: LifecycleState
+    age: number
+    replacementRecommended: boolean
+    replacementReason?: string
+  }
 }
 
 export type AssetStatus =
@@ -45,6 +74,11 @@ export type AssetStatus =
   | 'Breakdown'
   | 'Condemned'
   | 'Standby'
+  | 'In-Service'
+  | 'Spare'
+  | 'Disposed'
+  | 'Demo'
+  | 'Under-Service'
 
 export interface PreventiveMaintenance {
   id: string
@@ -290,10 +324,240 @@ export interface FilterOptions {
   department?: string
   dateFrom?: string
   dateTo?: string
+  assetType?: string
+  modality?: string
+  criticality?: CriticalityLevel
+  oem?: string
+  lifecycleState?: LifecycleState
+  isMinorAsset?: boolean
+  farNumber?: string
+  replacementRecommended?: boolean
   [key: string]: unknown
 }
 
 export interface SortOptions {
   field: string
   order: 'asc' | 'desc'
+}
+
+// Asset Inventory Management Types
+
+export type CriticalityLevel = 'Critical' | 'High' | 'Medium' | 'Low'
+
+export type LifecycleState =
+  | 'Active'
+  | 'In-Service'
+  | 'Spare'
+  | 'Disposed'
+  | 'Condemned'
+  | 'Demo'
+  | 'Under-Service'
+
+export interface AssetCategory {
+  type?: string
+  modality?: string
+  criticality?: CriticalityLevel
+  oem?: string
+}
+
+export interface AssetHistory {
+  id: string
+  assetId: string
+  asset?: Asset
+  eventType: AssetHistoryEventType
+  eventDate: string
+  description?: string
+  performedBy?: string
+  performedByUser?: User
+  oldValue?: string
+  newValue?: string
+  metadata?: Record<string, unknown>
+  createdAt: string
+}
+
+export type AssetHistoryEventType =
+  | 'Repair'
+  | 'Move'
+  | 'Calibration'
+  | 'StatusChange'
+  | 'PM'
+  | 'Complaint'
+
+export interface MEAChecklist {
+  id: string
+  assetId: string
+  asset?: Asset
+  checklistType: MEAChecklistType
+  performedDate: string
+  performedBy?: string
+  performedByUser?: User
+  status: MEAChecklistStatus
+  notes?: string
+  documents?: MEAChecklistDocument[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type MEAChecklistType =
+  | 'IQ'
+  | 'PQ'
+  | 'OQ'
+  | 'Factory_Calibration'
+  | 'Training'
+
+export type MEAChecklistStatus = 'Completed' | 'Pending' | 'Failed'
+
+export interface MEAChecklistDocument {
+  fileName: string
+  fileUrl: string
+  fileSize?: number
+  mimeType?: string
+}
+
+export interface AssetMove {
+  id: string
+  assetId: string
+  asset?: Asset
+  fromLocation?: string
+  toLocation?: string
+  fromDepartment?: string
+  toDepartment?: string
+  moveDate: string
+  movedBy?: string
+  movedByUser?: User
+  reason?: string
+  createdAt: string
+}
+
+export interface Document {
+  id: string
+  entityType: string
+  entityId: string
+  documentType: string
+  documentCategory?: DocumentCategory
+  fileName: string
+  fileUrl: string
+  fileSize?: number
+  mimeType?: string
+  thumbnailUrl?: string
+  uploadedBy?: string
+  uploadedByUser?: User
+  createdAt: string
+}
+
+export type DocumentCategory =
+  | 'Manual'
+  | 'Warranty'
+  | 'Training_Video'
+  | 'Certificate'
+  | 'IQ'
+  | 'PQ'
+  | 'OQ'
+  | 'Factory_Calibration'
+
+// Training Management Types
+
+export type TrainingSessionStatus = 'Scheduled' | 'InProgress' | 'Completed' | 'Cancelled'
+
+export type AttendanceStatus = 'Registered' | 'Attended' | 'Absent' | 'Cancelled'
+
+export type CertificationStatus = 'NotCertified' | 'Certified' | 'Expired' | 'RecertificationDue'
+
+export type AssessmentType = 'PreTest' | 'PostTest'
+
+export type TrainingCertificationStatus = 'Active' | 'Expired' | 'Revoked' | 'Renewed'
+
+export interface TrainingSession {
+  id: string
+  assetId: string
+  asset?: Asset
+  sessionDate: string
+  trainerId: string
+  trainer?: User
+  title: string
+  description?: string
+  department: string
+  location?: string
+  durationMinutes?: number
+  status: TrainingSessionStatus
+  notes?: string
+  documents?: Array<{
+    fileName: string
+    fileUrl: string
+    fileSize?: number
+    mimeType?: string
+  }>
+  participants?: TrainingParticipant[]
+  assessments?: TrainingAssessment[]
+  certifications?: TrainingCertification[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TrainingParticipant {
+  id: string
+  trainingSessionId: string
+  trainingSession?: TrainingSession
+  userId: string
+  user?: User
+  attendanceStatus: AttendanceStatus
+  certificationStatus: CertificationStatus
+  certifiedAt?: string
+  certificationExpiryDate?: string
+  attendedAt?: string
+  notes?: string
+  assessments?: TrainingAssessment[]
+  certifications?: TrainingCertification[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TrainingAssessment {
+  id: string
+  trainingSessionId: string
+  trainingSession?: TrainingSession
+  participantId: string
+  participant?: TrainingParticipant
+  assessmentType: AssessmentType
+  score?: number
+  maxScore?: number
+  questions?: Array<{
+    question: string
+    type: 'multiple_choice' | 'true_false' | 'short_answer' | 'essay'
+    options?: string[]
+    correctAnswer?: string | number | boolean
+    points: number
+  }>
+  answers?: Array<{
+    questionIndex: number
+    answer: string | number | boolean
+    pointsEarned: number
+  }>
+  documentUrl?: string
+  completedAt?: string
+  gradedBy?: string
+  grader?: User
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TrainingCertification {
+  id: string
+  participantId: string
+  participant?: TrainingParticipant
+  assetId: string
+  asset?: Asset
+  certificationNumber: string
+  issuedDate: string
+  expiryDate?: string
+  status: TrainingCertificationStatus
+  certificateUrl?: string
+  issuedBy: string
+  issuer?: User
+  preTestScore?: number
+  postTestScore?: number
+  improvementPercentage?: number
+  createdAt: string
+  updatedAt: string
 }

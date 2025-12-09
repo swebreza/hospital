@@ -20,6 +20,14 @@ export interface FilterState {
   manufacturer: string
   dateFrom: string
   dateTo: string
+  assetType: string
+  modality: string
+  criticality: string
+  oem: string
+  lifecycleState: string
+  isMinorAsset: string
+  farNumber: string
+  replacementRecommended: string
 }
 
 const statusOptions = [
@@ -52,6 +60,14 @@ export default function AssetFilters({
     manufacturer: '',
     dateFrom: '',
     dateTo: '',
+    assetType: '',
+    modality: '',
+    criticality: '',
+    oem: '',
+    lifecycleState: '',
+    isMinorAsset: '',
+    farNumber: '',
+    replacementRecommended: '',
   })
 
   const handleFilterChange = (key: keyof FilterState, value: string) => {
@@ -68,6 +84,14 @@ export default function AssetFilters({
       manufacturer: '',
       dateFrom: '',
       dateTo: '',
+      assetType: '',
+      modality: '',
+      criticality: '',
+      oem: '',
+      lifecycleState: '',
+      isMinorAsset: '',
+      farNumber: '',
+      replacementRecommended: '',
     }
     setFilters(emptyFilters)
     onReset()
@@ -151,6 +175,109 @@ export default function AssetFilters({
                       handleFilterChange('manufacturer', e.target.value)
                     }
                     placeholder='Filter by manufacturer...'
+                  />
+
+                  <Select
+                    label='Asset Type'
+                    options={[
+                      { value: '', label: 'All Types' },
+                      { value: 'Diagnostic', label: 'Diagnostic' },
+                      { value: 'Therapeutic', label: 'Therapeutic' },
+                      { value: 'Life Support', label: 'Life Support' },
+                      { value: 'Monitoring', label: 'Monitoring' },
+                      { value: 'Surgical', label: 'Surgical' },
+                      { value: 'Laboratory', label: 'Laboratory' },
+                    ]}
+                    value={filters.assetType}
+                    onChange={(e) =>
+                      handleFilterChange('assetType', e.target.value)
+                    }
+                  />
+
+                  <Input
+                    label='Modality'
+                    value={filters.modality}
+                    onChange={(e) =>
+                      handleFilterChange('modality', e.target.value)
+                    }
+                    placeholder='e.g. MRI, CT, Ultrasound'
+                  />
+
+                  <Select
+                    label='Criticality'
+                    options={[
+                      { value: '', label: 'All Criticalities' },
+                      { value: 'Critical', label: 'Critical' },
+                      { value: 'High', label: 'High' },
+                      { value: 'Medium', label: 'Medium' },
+                      { value: 'Low', label: 'Low' },
+                    ]}
+                    value={filters.criticality}
+                    onChange={(e) =>
+                      handleFilterChange('criticality', e.target.value)
+                    }
+                  />
+
+                  <Input
+                    label='OEM'
+                    value={filters.oem}
+                    onChange={(e) =>
+                      handleFilterChange('oem', e.target.value)
+                    }
+                    placeholder='Original Equipment Manufacturer'
+                  />
+
+                  <Select
+                    label='Lifecycle State'
+                    options={[
+                      { value: '', label: 'All States' },
+                      { value: 'Active', label: 'Active' },
+                      { value: 'In-Service', label: 'In-Service' },
+                      { value: 'Spare', label: 'Spare' },
+                      { value: 'Disposed', label: 'Disposed' },
+                      { value: 'Condemned', label: 'Condemned' },
+                      { value: 'Demo', label: 'Demo' },
+                      { value: 'Under-Service', label: 'Under-Service' },
+                    ]}
+                    value={filters.lifecycleState}
+                    onChange={(e) =>
+                      handleFilterChange('lifecycleState', e.target.value)
+                    }
+                  />
+
+                  <Input
+                    label='FAR Number'
+                    value={filters.farNumber}
+                    onChange={(e) =>
+                      handleFilterChange('farNumber', e.target.value)
+                    }
+                    placeholder='Fixed Asset Register Number'
+                  />
+
+                  <Select
+                    label='Minor Asset'
+                    options={[
+                      { value: '', label: 'All Assets' },
+                      { value: 'true', label: 'Minor Assets Only' },
+                      { value: 'false', label: 'Major Assets Only' },
+                    ]}
+                    value={filters.isMinorAsset}
+                    onChange={(e) =>
+                      handleFilterChange('isMinorAsset', e.target.value)
+                    }
+                  />
+
+                  <Select
+                    label='Replacement Recommended'
+                    options={[
+                      { value: '', label: 'All Assets' },
+                      { value: 'true', label: 'Recommended for Replacement' },
+                      { value: 'false', label: 'Not Recommended' },
+                    ]}
+                    value={filters.replacementRecommended}
+                    onChange={(e) =>
+                      handleFilterChange('replacementRecommended', e.target.value)
+                    }
                   />
 
                   <div className='grid grid-cols-2 gap-3'>

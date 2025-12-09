@@ -3,15 +3,16 @@
 import React, { useState } from 'react'
 import {
   FileText,
-  Download,
   Calendar,
   BarChart3,
   TrendingUp,
+  X,
 } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
-// import Select from '@/components/ui/Select' // Not used yet
 import EmptyState from '@/components/ui/EmptyState'
+import ReportViewer from '@/components/Reports/ReportViewer'
+import ReportExport from '@/components/Reports/ReportExport'
 import { toast } from 'sonner'
 
 const reportTemplates = [
@@ -62,6 +63,10 @@ const reportTemplates = [
 export default function ReportsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedReport, setSelectedReport] = useState<string | null>(null)
+  const [reportData, setReportData] = useState<unknown>(null)
+  const [loading, setLoading] = useState(false)
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
 
   const categories = [
     'all',
@@ -73,30 +78,48 @@ export default function ReportsPage() {
       ? reportTemplates
       : reportTemplates.filter((r) => r.category === selectedCategory)
 
-  const handleGenerateReport = (reportId: string) => {
+  const handleGenerateReport = async (reportId: string) => {
+    setLoading(true)
     setSelectedReport(reportId)
-    const report = reportTemplates.find((r) => r.id === reportId)
-    toast.success('Report generated successfully!', {
-      description: `${report?.name} is ready for viewing`,
-    })
+
+    try {
+      const params = new URLSearchParams({
+        type: reportId,
+      })
+
+      if (dateFrom) params.append('dateFrom', dateFrom)
+      if (dateTo) params.append('dateTo', dateTo)
+
+      const response = await fetch(`/api/reports?${params.toString()}`)
+      const result = await response.json()
+
+      if (result.success) {
+        setReportData(result.data)
+        const report = reportTemplates.find((r) => r.id === reportId)
+        toast.success('Report generated successfully!', {
+          description: `${report?.name} is ready for viewing`,
+        })
+      } else {
+        toast.error(result.error || 'Failed to generate report')
+        setReportData(null)
+      }
+    } catch (error) {
+      toast.error('Failed to generate report')
+      console.error(error)
+      setReportData(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleExport = (format: 'pdf' | 'excel') => {
-    if (!selectedReport) {
-      toast.error('Please generate a report first')
-      return
-    }
-    const report = reportTemplates.find((r) => r.id === selectedReport)
-    toast.success(`Exporting to ${format.toUpperCase()}...`, {
-      description: `${report?.name} will be downloaded shortly`,
-    })
-    // Simulate download
-    setTimeout(() => {
-      toast.success('Export completed!', {
-        description: 'Check your downloads folder',
-      })
-    }, 2000)
+  const handleCloseReport = () => {
+    setSelectedReport(null)
+    setReportData(null)
   }
+
+  const currentReport = selectedReport
+    ? reportTemplates.find((r) => r.id === selectedReport)
+    : null
 
   return (
     <div className='flex flex-col gap-6'>
@@ -110,27 +133,61 @@ export default function ReportsPage() {
             Generate comprehensive reports and analytics
           </p>
         </div>
-        {selectedReport && (
+        {selectedReport && currentReport && (
           <div className='flex items-center gap-2'>
+            <ReportExport
+              reportType={selectedReport}
+              reportTitle={currentReport.name}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              disabled={!reportData}
+            />
             <Button
               variant='outline'
               size='sm'
-              leftIcon={Download}
-              onClick={() => handleExport('excel')}
+              leftIcon={X}
+              onClick={handleCloseReport}
             >
-              Export Excel
-            </Button>
-            <Button
-              variant='outline'
-              size='sm'
-              leftIcon={Download}
-              onClick={() => handleExport('pdf')}
-            >
-              Export PDF
+              Close
             </Button>
           </div>
         )}
       </div>
+
+      {/* Date Range Filter */}
+      {selectedReport && (
+        <Card padding="md" className="flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Date From
+            </label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-bg-primary text-text-primary"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Date To
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-bg-primary text-text-primary"
+            />
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => selectedReport && handleGenerateReport(selectedReport)}
+            disabled={loading}
+          >
+            {loading ? 'Generating...' : 'Regenerate'}
+          </Button>
+        </Card>
+      )}
 
       {/* Category Filter */}
       <div className='flex items-center gap-2 flex-wrap'>
@@ -188,6 +245,15 @@ export default function ReportsPage() {
           icon={FileText}
           title='No reports found'
           description='Try selecting a different category'
+        />
+      )}
+
+      {/* Report Viewer */}
+      {selectedReport && (
+        <ReportViewer
+          reportType={selectedReport}
+          reportData={reportData}
+          loading={loading}
         />
       )}
     </div>

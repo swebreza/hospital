@@ -1,117 +1,166 @@
 'use client'
 
-import React, { useState } from 'react'
-import {
-  Users,
-  Star,
-  Phone,
-  Mail,
-  MapPin,
-  Plus,
-  TrendingUp,
-} from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Plus, Users } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import Card from '@/components/ui/Card'
-import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
-import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
+import VendorCard from '@/components/Vendors/VendorCard'
+import VendorForm from '@/components/Vendors/VendorForm'
+import VendorDetails from '@/components/Vendors/VendorDetails'
+import VendorFilters from '@/components/Vendors/VendorFilters'
+import ContractForm from '@/components/Vendors/ContractForm'
+import ContractList from '@/components/Vendors/ContractList'
+import { vendorsApi } from '@/lib/api/vendors'
+import { contractsApi } from '@/lib/api/contracts'
+import { assetsApi } from '@/lib/api/assets'
 import { toast } from 'sonner'
-
-// Mock vendor data
-const mockVendors = [
-  {
-    id: 'V-001',
-    name: 'Siemens Healthineers',
-    contactPerson: 'John Smith',
-    email: 'john.smith@siemens.com',
-    phone: '+91 98765 43210',
-    address: 'Bangalore, Karnataka',
-    rating: 4.5,
-    performanceScore: 92,
-    activeContracts: 5,
-    status: 'Active',
-  },
-  {
-    id: 'V-002',
-    name: 'Getinge India',
-    contactPerson: 'Sarah Johnson',
-    email: 'sarah.j@getinge.com',
-    phone: '+91 98765 43211',
-    address: 'Mumbai, Maharashtra',
-    rating: 4.2,
-    performanceScore: 88,
-    activeContracts: 3,
-    status: 'Active',
-  },
-]
+import type { Vendor, Contract, Asset } from '@/lib/types'
 
 export default function VendorsPage() {
-  const [vendors] = useState(mockVendors)
+  const [vendors, setVendors] = useState<Vendor[]>([])
+  const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  })
+
+  // Filters
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [minRating, setMinRating] = useState('')
+  const [sortBy, setSortBy] = useState('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
+  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
-  const [selectedVendor, setSelectedVendor] = useState<string | null>(null)
-  const [vendorForm, setVendorForm] = useState({
-    name: '',
-    contactPerson: '',
-    email: '',
-    phone: '',
-    address: '',
-  })
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null)
+  const [vendorPerformance, setVendorPerformance] = useState<any>(null)
+  const [vendorContracts, setVendorContracts] = useState<Contract[]>([])
+  const [availableAssets, setAvailableAssets] = useState<Asset[]>([])
 
-  const handleAddVendor = () => {
-    if (!vendorForm.name || !vendorForm.contactPerson || !vendorForm.email) {
-      toast.error('Please fill in all required fields')
-      return
+  // Load vendors
+  const loadVendors = async () => {
+    try {
+      setLoading(true)
+      const response = await vendorsApi.getAll(pagination.page, pagination.limit, {
+        search: searchTerm,
+        status: statusFilter,
+        minRating: minRating ? parseFloat(minRating) : undefined,
+        sortBy,
+        sortOrder,
+      })
+
+      setVendors(response.data)
+      setPagination(response.pagination)
+    } catch (error) {
+      console.error('Error loading vendors:', error)
+      toast.error('Failed to load vendors')
+    } finally {
+      setLoading(false)
     }
-    toast.success('Vendor added successfully!', {
-      description: `${vendorForm.name} has been added to the system`,
-    })
-    setIsAddModalOpen(false)
-    setVendorForm({ name: '', contactPerson: '', email: '', phone: '', address: '' })
   }
 
-  const handleViewDetails = (vendorId: string) => {
-    setSelectedVendor(vendorId)
+  useEffect(() => {
+    loadVendors()
+  }, [pagination.page, searchTerm, statusFilter, minRating, sortBy, sortOrder])
+
+  // Load vendor details
+  const loadVendorDetails = async (vendorId: string) => {
+    try {
+      const [vendorResponse, contractsResponse, performanceResponse] = await Promise.all([
+        vendorsApi.getById(vendorId),
+        vendorsApi.getContracts(vendorId),
+        vendorsApi.getPerformance(vendorId),
+      ])
+
+      if (vendorResponse.success && vendorResponse.data) {
+        setSelectedVendor(vendorResponse.data as Vendor)
+        setVendorContracts(contractsResponse.data || [])
+        setVendorPerformance(performanceResponse.data)
+      }
+    } catch (error) {
+      console.error('Error loading vendor details:', error)
+      toast.error('Failed to load vendor details')
+    }
+  }
+
+  // Load available assets for contract form
+  const loadAssets = async () => {
+    try {
+      const response = await assetsApi.getAll(1, 100)
+      setAvailableAssets(response.data)
+    } catch (error) {
+      console.error('Error loading assets:', error)
+    }
+  }
+
+  const handleAddVendor = async (data: Partial<Vendor>) => {
+    try {
+      const response = await vendorsApi.create(data)
+      if (response.success) {
+        toast.success('Vendor added successfully!', {
+          description: `${data.name} has been added to the system`,
+        })
+        setIsAddModalOpen(false)
+        loadVendors()
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add vendor')
+    }
+  }
+
+  const handleViewDetails = async (vendorId: string) => {
+    await loadVendorDetails(vendorId)
     setIsViewModalOpen(true)
   }
 
-  const handleManageContracts = (vendorId: string) => {
-    setSelectedVendor(vendorId)
-    setIsContractModalOpen(true)
+  const handleManageContracts = async (vendorId: string) => {
+    try {
+      const vendorResponse = await vendorsApi.getById(vendorId)
+      if (vendorResponse.success && vendorResponse.data) {
+        setSelectedVendor(vendorResponse.data as Vendor)
+        await loadAssets()
+        setIsContractModalOpen(true)
+      }
+    } catch (error) {
+      toast.error('Failed to load vendor information')
+    }
   }
 
-  const filteredVendors = vendors.filter(
-    (vendor) =>
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const handleAddContract = async (data: Partial<Contract>) => {
+    try {
+      if (!selectedVendor) return
 
-  const renderStars = (rating: number) => {
-    const stars = []
-    const fullStars = Math.floor(rating)
-    const hasHalfStar = rating % 1 >= 0.5
+      const contractData = {
+        ...data,
+        vendorId: selectedVendor.id,
+      }
 
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <Star key={i} size={16} className='fill-yellow-400 text-yellow-400' />
-      )
+      const response = await contractsApi.create(contractData)
+      if (response.success) {
+        toast.success('Contract created successfully!')
+        setIsContractModalOpen(false)
+        if (selectedVendor) {
+          await loadVendorDetails(selectedVendor.id)
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create contract')
     }
-    if (hasHalfStar) {
-      stars.push(
-        <Star
-          key='half'
-          size={16}
-          className='fill-yellow-400/50 text-yellow-400'
-        />
-      )
-    }
-    for (let i = stars.length; i < 5; i++) {
-      stars.push(<Star key={i} size={16} className='text-gray-300' />)
-    }
-    return stars
+  }
+
+  const handleResetFilters = () => {
+    setSearchTerm('')
+    setStatusFilter('')
+    setMinRating('')
+    setSortBy('name')
+    setSortOrder('asc')
+    setPagination((prev) => ({ ...prev, page: 1 }))
   }
 
   return (
@@ -126,22 +175,43 @@ export default function VendorsPage() {
             Manage vendors, contracts, and performance tracking
           </p>
         </div>
-        <Button variant='primary' leftIcon={Plus} onClick={() => setIsAddModalOpen(true)}>
+        <Button
+          variant='primary'
+          leftIcon={Plus}
+          onClick={() => setIsAddModalOpen(true)}
+        >
           Add Vendor
         </Button>
       </div>
 
-      {/* Search */}
-      <div className='max-w-md'>
-        <Input
-          placeholder='Search vendors...'
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+      {/* Filters */}
+      <VendorFilters
+        search={searchTerm}
+        status={statusFilter}
+        minRating={minRating}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSearchChange={setSearchTerm}
+        onStatusChange={setStatusFilter}
+        onMinRatingChange={setMinRating}
+        onSortChange={(by, order) => {
+          setSortBy(by)
+          setSortOrder(order)
+        }}
+        onReset={handleResetFilters}
+      />
 
       {/* Vendor Cards */}
-      {filteredVendors.length === 0 ? (
+      {loading ? (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className='h-64 bg-bg-secondary animate-pulse rounded-lg'
+            />
+          ))}
+        </div>
+      ) : vendors.length === 0 ? (
         <EmptyState
           icon={Users}
           title='No vendors found'
@@ -150,138 +220,64 @@ export default function VendorsPage() {
           onAction={() => setIsAddModalOpen(true)}
         />
       ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-          {filteredVendors.map((vendor) => (
-            <Card key={vendor.id} hover padding='md' className='flex flex-col'>
-              <div className='flex items-start justify-between mb-4'>
-                <div className='flex-1'>
-                  <h3 className='font-semibold text-lg text-text-primary mb-1'>
-                    {vendor.name}
-                  </h3>
-                  <div className='flex items-center gap-1 mb-2'>
-                    {renderStars(vendor.rating)}
-                    <span className='text-sm text-text-secondary ml-1'>
-                      ({vendor.rating})
-                    </span>
-                  </div>
-                </div>
-                <Badge variant='success'>{vendor.status}</Badge>
-              </div>
+        <>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            {vendors.map((vendor) => (
+              <VendorCard
+                key={vendor.id}
+                vendor={vendor}
+                onViewDetails={handleViewDetails}
+                onManageContracts={handleManageContracts}
+              />
+            ))}
+          </div>
 
-              <div className='space-y-2 mb-4'>
-                <div className='flex items-center gap-2 text-sm text-text-secondary'>
-                  <Users size={16} />
-                  <span>{vendor.contactPerson}</span>
-                </div>
-                <div className='flex items-center gap-2 text-sm text-text-secondary'>
-                  <Mail size={16} />
-                  <span className='truncate'>{vendor.email}</span>
-                </div>
-                <div className='flex items-center gap-2 text-sm text-text-secondary'>
-                  <Phone size={16} />
-                  <span>{vendor.phone}</span>
-                </div>
-                <div className='flex items-center gap-2 text-sm text-text-secondary'>
-                  <MapPin size={16} />
-                  <span>{vendor.address}</span>
-                </div>
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className='flex items-center justify-between'>
+              <p className='text-sm text-text-secondary'>
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                {pagination.total} vendors
+              </p>
+              <div className='flex gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() =>
+                    setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+                  }
+                  disabled={pagination.page === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() =>
+                    setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                  }
+                  disabled={pagination.page >= pagination.totalPages}
+                >
+                  Next
+                </Button>
               </div>
-
-              <div className='pt-4 border-t border-border space-y-3'>
-                <div className='flex items-center justify-between'>
-                  <span className='text-sm text-text-secondary'>
-                    Performance Score
-                  </span>
-                  <div className='flex items-center gap-2'>
-                    <TrendingUp size={16} className='text-success' />
-                    <span className='font-semibold text-text-primary'>
-                      {vendor.performanceScore}%
-                    </span>
-                  </div>
-                </div>
-                <div className='flex items-center justify-between'>
-                  <span className='text-sm text-text-secondary'>
-                    Active Contracts
-                  </span>
-                  <Badge variant='info'>{vendor.activeContracts}</Badge>
-                </div>
-                <div className='flex gap-2 pt-2'>
-                  <Button 
-                    variant='outline' 
-                    size='sm' 
-                    className='flex-1'
-                    onClick={() => handleViewDetails(vendor.id)}
-                  >
-                    View Details
-                  </Button>
-                  <Button 
-                    variant='primary' 
-                    size='sm' 
-                    className='flex-1'
-                    onClick={() => handleManageContracts(vendor.id)}
-                  >
-                    Manage Contracts
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add Vendor Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add New Vendor"
-        size="md"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleAddVendor}>
-              Add Vendor
-            </Button>
-          </div>
-        }
+        title='Add New Vendor'
+        size='lg'
       >
-        <div className="space-y-4">
-          <Input
-            label="Vendor Name"
-            placeholder="e.g. Siemens Healthineers"
-            value={vendorForm.name}
-            onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })}
-            required
-          />
-          <Input
-            label="Contact Person"
-            placeholder="e.g. John Smith"
-            value={vendorForm.contactPerson}
-            onChange={(e) => setVendorForm({ ...vendorForm, contactPerson: e.target.value })}
-            required
-          />
-          <Input
-            label="Email"
-            type="email"
-            placeholder="contact@vendor.com"
-            value={vendorForm.email}
-            onChange={(e) => setVendorForm({ ...vendorForm, email: e.target.value })}
-            required
-          />
-          <Input
-            label="Phone"
-            placeholder="+91 98765 43210"
-            value={vendorForm.phone}
-            onChange={(e) => setVendorForm({ ...vendorForm, phone: e.target.value })}
-          />
-          <Input
-            label="Address"
-            placeholder="City, State"
-            value={vendorForm.address}
-            onChange={(e) => setVendorForm({ ...vendorForm, address: e.target.value })}
-          />
-        </div>
+        <VendorForm
+          onSubmit={handleAddVendor}
+          onCancel={() => setIsAddModalOpen(false)}
+        />
       </Modal>
 
       {/* View Vendor Details Modal */}
@@ -290,32 +286,20 @@ export default function VendorsPage() {
         onClose={() => {
           setIsViewModalOpen(false)
           setSelectedVendor(null)
+          setVendorPerformance(null)
+          setVendorContracts([])
         }}
-        title="Vendor Details"
-        size="md"
+        title='Vendor Details'
+        size='xl'
       >
         {selectedVendor && (
-          <div className="space-y-4">
-            {(() => {
-              const vendor = vendors.find(v => v.id === selectedVendor)
-              if (!vendor) return null
-              return (
-                <>
-                  <div>
-                    <h3 className="font-semibold text-text-primary mb-2">{vendor.name}</h3>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="text-text-secondary">Contact:</span> {vendor.contactPerson}</p>
-                      <p><span className="text-text-secondary">Email:</span> {vendor.email}</p>
-                      <p><span className="text-text-secondary">Phone:</span> {vendor.phone}</p>
-                      <p><span className="text-text-secondary">Address:</span> {vendor.address}</p>
-                      <p><span className="text-text-secondary">Rating:</span> {vendor.rating}/5</p>
-                      <p><span className="text-text-secondary">Performance Score:</span> {vendor.performanceScore}%</p>
-                    </div>
-                  </div>
-                </>
-              )
-            })()}
-          </div>
+          <VendorDetails
+            vendor={{
+              ...selectedVendor,
+              contracts: vendorContracts,
+            }}
+            performance={vendorPerformance}
+          />
         )}
       </Modal>
 
@@ -325,35 +309,47 @@ export default function VendorsPage() {
         onClose={() => {
           setIsContractModalOpen(false)
           setSelectedVendor(null)
+          setAvailableAssets([])
         }}
-        title="Manage Contracts"
-        size="lg"
+        title={`Manage Contracts - ${selectedVendor?.name || ''}`}
+        size='xl'
         footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => {
-              setIsContractModalOpen(false)
-              setSelectedVendor(null)
-            }}>
+          <div className='flex justify-end gap-3'>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setIsContractModalOpen(false)
+                setSelectedVendor(null)
+                setAvailableAssets([])
+              }}
+            >
               Close
-            </Button>
-            <Button variant="primary" onClick={() => {
-              toast.success('Contract created successfully!')
-              setIsContractModalOpen(false)
-              setSelectedVendor(null)
-            }}>
-              Add New Contract
             </Button>
           </div>
         }
       >
         {selectedVendor && (
-          <div className="space-y-4">
-            <p className="text-sm text-text-secondary">
-              Manage AMC/CMC contracts for {vendors.find(v => v.id === selectedVendor)?.name}
-            </p>
-            <div className="border border-border rounded-lg p-4">
-              <p className="text-sm text-text-secondary">Contract management interface coming soon...</p>
+          <div className='space-y-6'>
+            <div>
+              <h3 className='text-lg font-semibold text-text-primary mb-4'>
+                Add New Contract
+              </h3>
+              <ContractForm
+                vendorId={selectedVendor.id}
+                assets={availableAssets}
+                onSubmit={handleAddContract}
+                onCancel={() => {}}
+              />
             </div>
+
+            {vendorContracts.length > 0 && (
+              <div>
+                <h3 className='text-lg font-semibold text-text-primary mb-4'>
+                  Existing Contracts
+                </h3>
+                <ContractList contracts={vendorContracts} />
+              </div>
+            )}
           </div>
         )}
       </Modal>

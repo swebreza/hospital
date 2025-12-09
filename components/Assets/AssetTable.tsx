@@ -115,6 +115,21 @@ export default function AssetTable(props: AssetTableProps = {}) {
                   Status
                 </th>
                 <th className='p-4 text-xs font-semibold text-text-secondary uppercase tracking-wider'>
+                  Type
+                </th>
+                <th className='p-4 text-xs font-semibold text-text-secondary uppercase tracking-wider'>
+                  Criticality
+                </th>
+                <th className='p-4 text-xs font-semibold text-text-secondary uppercase tracking-wider'>
+                  Lifecycle State
+                </th>
+                <th className='p-4 text-xs font-semibold text-text-secondary uppercase tracking-wider'>
+                  FAR Number
+                </th>
+                <th className='p-4 text-xs font-semibold text-text-secondary uppercase tracking-wider'>
+                  Age
+                </th>
+                <th className='p-4 text-xs font-semibold text-text-secondary uppercase tracking-wider'>
                   Next PM
                 </th>
                 <th className='p-4 text-xs font-semibold text-text-secondary uppercase tracking-wider'>
@@ -179,6 +194,44 @@ export default function AssetTable(props: AssetTableProps = {}) {
                         }`}
                       />
                       {asset.status}
+                    </span>
+                  </td>
+                  <td className='p-4'>
+                    <span className='text-sm text-text-primary'>
+                      {asset.assetType || 'N/A'}
+                    </span>
+                  </td>
+                  <td className='p-4'>
+                    {asset.criticality && (
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          asset.criticality === 'Critical'
+                            ? 'bg-danger-light text-danger'
+                            : asset.criticality === 'High'
+                            ? 'bg-warning-light text-warning'
+                            : 'bg-info-light text-info'
+                        }`}
+                      >
+                        {asset.criticality}
+                      </span>
+                    )}
+                    {!asset.criticality && (
+                      <span className='text-sm text-text-tertiary'>N/A</span>
+                    )}
+                  </td>
+                  <td className='p-4'>
+                    <span className='text-sm text-text-primary'>
+                      {asset.lifecycleState || asset.status}
+                    </span>
+                  </td>
+                  <td className='p-4'>
+                    <span className='text-sm text-text-primary font-mono'>
+                      {asset.farNumber || 'N/A'}
+                    </span>
+                  </td>
+                  <td className='p-4'>
+                    <span className='text-sm text-text-primary'>
+                      {asset.ageYears ? `${asset.ageYears.toFixed(1)}y` : 'N/A'}
                     </span>
                   </td>
                   <td className='p-4'>
