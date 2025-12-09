@@ -64,7 +64,7 @@ export async function GET(
         createdAt: c.createdAt.toISOString(),
         updatedAt: c.updatedAt.toISOString(),
       })),
-      status: 'Active', // Default status
+      status: vendor.status || 'Pending',
       escalationMatrix: [], // Not in schema
       createdAt: vendor.createdAt.toISOString(),
       updatedAt: vendor.updatedAt.toISOString(),
@@ -129,13 +129,14 @@ export async function PUT(
         address: body.address,
         rating: body.rating,
         performanceScore: body.performanceScore,
+        status: body.status, // Update status if provided
       },
     })
 
     const vendorResponse = {
       ...updatedVendor,
       id: updatedVendor.id,
-      status: 'Active', // Default status
+      status: updatedVendor.status || 'Pending',
       escalationMatrix: body.escalationMatrix || [], // Not in schema, but accept it
       createdAt: updatedVendor.createdAt.toISOString(),
       updatedAt: updatedVendor.updatedAt.toISOString(),

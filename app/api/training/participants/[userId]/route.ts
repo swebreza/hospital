@@ -77,7 +77,7 @@ export async function GET(
         status: p.trainingSessionId.status,
         department: p.trainingSessionId.department,
         asset: p.trainingSessionId.assetId?._id ? {
-          id: p.trainingSessionId.assetId.id || p.trainingSessionId.assetId._id.toString(),
+          id: String(p.trainingSessionId.assetId.id || p.trainingSessionId.assetId._id),
           name: p.trainingSessionId.assetId.name || '',
           model: p.trainingSessionId.assetId.model || '',
           manufacturer: p.trainingSessionId.assetId.manufacturer || '',
@@ -96,7 +96,7 @@ export async function GET(
       id: c._id.toString(),
       certificationNumber: c.certificationNumber,
       asset: c.assetId?._id ? {
-        id: c.assetId.id || c.assetId._id.toString(),
+        id: String(c.assetId.id || c.assetId._id),
         name: c.assetId.name || '',
         model: c.assetId.model || '',
         manufacturer: c.assetId.manufacturer || '',

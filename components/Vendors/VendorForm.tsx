@@ -27,7 +27,7 @@ export default function VendorForm({
     address: vendor?.address || '',
     rating: vendor?.rating?.toString() || '',
     performanceScore: vendor?.performanceScore?.toString() || '',
-    status: (vendor?.status as string) || 'Active',
+      status: (vendor?.status as string) || 'Pending',
   })
 
   const [escalationMatrix, setEscalationMatrix] = useState<EscalationContact[]>(
@@ -79,7 +79,7 @@ export default function VendorForm({
       performanceScore: formData.performanceScore
         ? parseFloat(formData.performanceScore)
         : undefined,
-      status: formData.status as 'Active' | 'Inactive' | 'Suspended',
+      status: formData.status as 'Pending' | 'Active' | 'Inactive' | 'Suspended',
       escalationMatrix: escalationMatrix.length > 0 ? escalationMatrix : undefined,
     }
 
@@ -199,6 +199,7 @@ export default function VendorForm({
           onChange={(e) => setFormData({ ...formData, status: e.target.value })}
           className='w-full px-4 py-2 text-sm rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary'
         >
+          <option value='Pending'>Pending</option>
           <option value='Active'>Active</option>
           <option value='Inactive'>Inactive</option>
           <option value='Suspended'>Suspended</option>

@@ -48,6 +48,8 @@ export default function VendorCard({
 
   const getStatusBadgeVariant = (status?: string) => {
     switch (status) {
+      case 'Pending':
+        return 'warning'
       case 'Active':
         return 'success'
       case 'Inactive':
@@ -76,7 +78,7 @@ export default function VendorCard({
           )}
         </div>
         <Badge variant={getStatusBadgeVariant(vendor.status as string)}>
-          {vendor.status || 'Active'}
+          {vendor.status || 'Pending'}
         </Badge>
       </div>
 

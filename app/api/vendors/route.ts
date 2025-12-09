@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {}
+    const status = searchParams.get('status')
 
     if (search) {
       // For MongoDB, use contains (case-sensitive) or regex for case-insensitive
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest) {
         { contactPerson: { contains: search } },
         { email: { contains: search } },
       ]
+    }
+
+    if (status) {
+      where.status = status
     }
 
     if (minRating) {
@@ -66,7 +71,7 @@ export async function GET(request: NextRequest) {
       ...vendor,
       id: vendor.id,
       activeContractsCount: vendor.contracts.length,
-      status: 'Active', // Default status since it's not in schema
+      status: vendor.status || 'Pending',
       createdAt: vendor.createdAt.toISOString(),
       updatedAt: vendor.updatedAt.toISOString(),
     }))
@@ -126,13 +131,14 @@ export async function POST(request: NextRequest) {
         address: body.address,
         rating: body.rating || null,
         performanceScore: body.performanceScore || null,
+        status: body.status || 'Active', // Default to Active if not provided (for admin-created vendors)
       },
     })
 
     const vendorResponse = {
       ...vendor,
       id: vendor.id,
-      status: 'Active', // Default status
+      status: vendor.status || 'Active',
       escalationMatrix: [], // Not in schema, return empty array
       createdAt: vendor.createdAt.toISOString(),
       updatedAt: vendor.updatedAt.toISOString(),

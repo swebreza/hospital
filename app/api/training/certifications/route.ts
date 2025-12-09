@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       })(),
       assetId: c.assetId?._id?.toString() || c.assetId?.toString() || '',
       asset: c.assetId?._id ? {
-        id: c.assetId.id || c.assetId._id.toString(),
+        id: String(c.assetId.id || c.assetId._id),
         name: c.assetId.name || '',
         model: c.assetId.model || '',
         manufacturer: c.assetId.manufacturer || '',
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
       participantId: populatedCertification!.participantId?._id?.toString() || populatedCertification!.participantId?.toString() || '',
       assetId: populatedCertification!.assetId?._id?.toString() || populatedCertification!.assetId?.toString() || '',
       asset: populatedCertification!.assetId?._id ? {
-        id: populatedCertification!.assetId.id || populatedCertification!.assetId._id.toString(),
+        id: String(populatedCertification!.assetId.id || populatedCertification!.assetId._id),
         name: populatedCertification!.assetId.name || '',
         model: populatedCertification!.assetId.model || '',
         manufacturer: populatedCertification!.assetId.manufacturer || '',
@@ -371,7 +371,7 @@ export async function PUT(request: NextRequest) {
       participantId: certification.participantId?._id?.toString() || certification.participantId?.toString() || '',
       assetId: certification.assetId?._id?.toString() || certification.assetId?.toString() || '',
       asset: certification.assetId?._id ? {
-        id: certification.assetId.id || certification.assetId._id.toString(),
+        id: String(certification.assetId.id || certification.assetId._id),
         name: certification.assetId.name || '',
         model: certification.assetId.model || '',
         manufacturer: certification.assetId.manufacturer || '',

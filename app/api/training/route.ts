@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       id: session._id.toString(),
       assetId: session.assetId?._id?.toString() || session.assetId?.toString() || '',
       asset: session.assetId?._id ? {
-        id: session.assetId.id || session.assetId._id.toString(),
+        id: String(session.assetId.id || session.assetId._id),
         name: session.assetId.name || '',
         model: session.assetId.model || '',
         manufacturer: session.assetId.manufacturer || '',

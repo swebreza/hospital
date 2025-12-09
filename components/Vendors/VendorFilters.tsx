@@ -49,6 +49,7 @@ export default function VendorFilters({
         onChange={(e) => onStatusChange(e.target.value)}
         options={[
           { value: '', label: 'All Status' },
+          { value: 'Pending', label: 'Pending' },
           { value: 'Active', label: 'Active' },
           { value: 'Inactive', label: 'Inactive' },
           { value: 'Suspended', label: 'Suspended' },

@@ -59,7 +59,7 @@ export async function GET(
       } : undefined,
       assetId: certification.assetId?._id?.toString() || certification.assetId?.toString() || '',
       asset: certification.assetId?._id ? {
-        id: certification.assetId.id || certification.assetId._id.toString(),
+        id: String(certification.assetId.id || certification.assetId._id),
         name: certification.assetId.name || '',
         model: certification.assetId.model || '',
         manufacturer: certification.assetId.manufacturer || '',
@@ -183,7 +183,7 @@ export async function PUT(
       } : undefined,
       assetId: certification.assetId?._id?.toString() || certification.assetId?.toString() || '',
       asset: certification.assetId?._id ? {
-        id: certification.assetId.id || certification.assetId._id.toString(),
+        id: String(certification.assetId.id || certification.assetId._id),
         name: certification.assetId.name || '',
         model: certification.assetId.model || '',
         manufacturer: certification.assetId.manufacturer || '',
