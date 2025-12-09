@@ -4,13 +4,14 @@ import React from 'react'
 import { clsx } from 'clsx'
 import { LucideIcon } from 'lucide-react'
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'as'> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   isLoading?: boolean
   leftIcon?: LucideIcon
   rightIcon?: LucideIcon
   fullWidth?: boolean
+  as?: React.ElementType
   children: React.ReactNode
 }
 
@@ -21,6 +22,7 @@ export default function Button({
   leftIcon: LeftIcon,
   rightIcon: RightIcon,
   fullWidth = false,
+  as: Component = 'button',
   className,
   disabled,
   children,
@@ -48,18 +50,20 @@ export default function Button({
     lg: 'px-6 py-3 text-base gap-2',
   }
 
+  const ComponentProps = {
+    className: clsx(
+      baseStyles,
+      variants[variant],
+      sizes[size],
+      fullWidth && 'w-full',
+      className
+    ),
+    ...(Component === 'button' && { disabled: disabled || isLoading }),
+    ...props,
+  }
+
   return (
-    <button
-      className={clsx(
-        baseStyles,
-        variants[variant],
-        sizes[size],
-        fullWidth && 'w-full',
-        className
-      )}
-      disabled={disabled || isLoading}
-      {...props}
-    >
+    <Component {...ComponentProps}>
       {isLoading ? (
         <>
           <svg
@@ -95,6 +99,6 @@ export default function Button({
           )}
         </>
       )}
-    </button>
+    </Component>
   )
 }
