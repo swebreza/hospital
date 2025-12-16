@@ -3,8 +3,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { PaginatedResponse, Vendor as VendorType } from '@/lib/types'
+import { requireRole } from '@/lib/auth/api-auth'
 
 export async function GET(request: NextRequest) {
+  const authResult = await requireRole(['normal', 'full_access'])
+  if (authResult.error) return authResult.error
+
   try {
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
@@ -97,6 +101,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authResult = await requireRole(['normal', 'full_access'])
+  if (authResult.error) return authResult.error
+
   try {
     const body = await request.json()
 

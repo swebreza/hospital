@@ -11,12 +11,19 @@ export interface User {
   updatedAt: string
 }
 
-export type UserRole =
+// Legacy roles (for backward compatibility)
+export type LegacyUserRole =
   | 'admin'
   | 'biomedical_engineer'
   | 'technician'
   | 'manager'
   | 'viewer'
+
+// Clerk-based roles
+export type ClerkUserRole = 'normal' | 'full_access'
+
+// Combined role type
+export type UserRole = LegacyUserRole | ClerkUserRole
 
 export interface Asset {
   id: string

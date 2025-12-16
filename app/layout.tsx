@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import AppLayout from "@/components/Layout/AppLayout";
 import { Toaster } from 'sonner';
+import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "BME-AMS | Cybrox Solutions",
@@ -14,13 +15,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <AppLayout>
-          {children}
-        </AppLayout>
-        <Toaster position="top-right" richColors />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body>
+          <AppLayout>
+            {children}
+          </AppLayout>
+          <Toaster position="top-right" richColors />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

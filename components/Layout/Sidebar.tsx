@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import {
   LayoutDashboard,
   Stethoscope,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Tooltip from '@/components/ui/Tooltip'
+import type { ClerkUserRole } from '@/lib/types'
 
 interface MenuItem {
   name: string
@@ -28,27 +30,39 @@ interface MenuItem {
   href: string
   badge?: number
   submenu?: { name: string; href: string }[]
+  roles?: ClerkUserRole[] // Roles that can access this menu item
 }
 
-const menuItems: MenuItem[] = [
-  { name: 'Dashboard', icon: LayoutDashboard, href: '/' },
-  { name: 'Assets', icon: Stethoscope, href: '/assets' },
-  { name: 'Preventive Maint.', icon: ClipboardCheck, href: '/pm' },
-  { name: 'Calibration', icon: Activity, href: '/calibration' },
-  { name: 'Training', icon: GraduationCap, href: '/training' },
-  { name: 'Breakdowns', icon: AlertTriangle, href: '/complaints', badge: 3 },
-  { name: 'Inventory', icon: Package, href: '/inventory' },
-  { name: 'Vendors', icon: Users, href: '/vendors' },
-  { name: 'Reports', icon: FileText, href: '/reports' },
-  { name: 'Settings', icon: Settings, href: '/settings' },
+const allMenuItems: MenuItem[] = [
+  { name: 'Dashboard', icon: LayoutDashboard, href: '/', roles: ['normal', 'full_access'] },
+  { name: 'Assets', icon: Stethoscope, href: '/assets', roles: ['normal', 'full_access'] },
+  { name: 'Preventive Maint.', icon: ClipboardCheck, href: '/pm', roles: ['normal', 'full_access'] },
+  { name: 'Calibration', icon: Activity, href: '/calibration', roles: ['full_access'] },
+  { name: 'Training', icon: GraduationCap, href: '/training', roles: ['full_access'] },
+  { name: 'Breakdowns', icon: AlertTriangle, href: '/complaints', badge: 3, roles: ['normal', 'full_access'] },
+  { name: 'Inventory', icon: Package, href: '/inventory', roles: ['normal', 'full_access'] },
+  { name: 'Vendors', icon: Users, href: '/vendors', roles: ['normal', 'full_access'] },
+  { name: 'Reports', icon: FileText, href: '/reports', roles: ['full_access'] },
+  { name: 'Settings', icon: Settings, href: '/settings', roles: ['full_access'] },
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { user, isLoaded } = useUser()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [isMobile, setIsMobile] = useState(false)
+
+  // Get user role from Clerk metadata
+  const userRole = (user?.publicMetadata?.role as ClerkUserRole) || null
+
+  // Filter menu items based on user role
+  const menuItems = allMenuItems.filter((item) => {
+    if (!item.roles) return true // If no roles specified, show to all
+    if (!userRole) return false // If user has no role, hide all
+    return item.roles.includes(userRole)
+  })
 
   useEffect(() => {
     const checkMobile = () => {
@@ -226,23 +240,25 @@ export default function Sidebar() {
       </nav>
 
       {/* User Profile */}
-      <div className='p-4 border-t border-border bg-gradient-to-r from-bg-secondary to-transparent'>
-        <div className='flex items-center gap-3'>
-          <div className='w-11 h-11 rounded-full bg-gradient-to-br from-primary to-info text-white flex items-center justify-center font-semibold flex-shrink-0 shadow-md ring-2 ring-white/50'>
-            JD
-          </div>
-          {!isCollapsed && (
-            <div className='flex-1 min-w-0'>
-              <div className='text-sm font-bold text-text-primary truncate'>
-                John Doe
-              </div>
-              <div className='text-xs text-text-secondary truncate font-medium'>
-                Biomedical Eng.
-              </div>
+      {isLoaded && user && (
+        <div className='p-4 border-t border-border bg-gradient-to-r from-bg-secondary to-transparent'>
+          <div className='flex items-center gap-3'>
+            <div className='w-11 h-11 rounded-full bg-gradient-to-br from-primary to-info text-white flex items-center justify-center font-semibold flex-shrink-0 shadow-md ring-2 ring-white/50'>
+              {user.firstName?.[0] || user.emailAddresses[0]?.emailAddress[0] || 'U'}
             </div>
-          )}
+            {!isCollapsed && (
+              <div className='flex-1 min-w-0'>
+                <div className='text-sm font-bold text-text-primary truncate'>
+                  {user.fullName || user.firstName || user.emailAddresses[0]?.emailAddress || 'User'}
+                </div>
+                <div className='text-xs text-text-secondary truncate font-medium'>
+                  {userRole === 'full_access' ? 'Full Access' : userRole === 'normal' ? 'Normal User' : 'No Role'}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </>
   )
 

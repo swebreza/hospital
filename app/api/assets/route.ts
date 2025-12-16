@@ -4,8 +4,12 @@ import Asset from '@/lib/models/Asset'
 import type { PaginatedResponse, Asset as IAsset, FilterOptions } from '@/lib/types'
 import { createAssetHistory } from '@/lib/services/assetHistory'
 import { calculateAssetAge } from '@/lib/services/lifecycleAnalysis'
+import { requireRole } from '@/lib/auth/api-auth'
 
 export async function GET(request: NextRequest) {
+  const authResult = await requireRole(['normal', 'full_access'])
+  if (authResult.error) return authResult.error
+
   try {
     await connectDB()
 
@@ -123,6 +127,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authResult = await requireRole(['normal', 'full_access'])
+  if (authResult.error) return authResult.error
+
   try {
     await connectDB()
 

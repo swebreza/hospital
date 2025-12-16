@@ -5,14 +5,11 @@ import {
   Search,
   Bell,
   HelpCircle,
-  User,
-  LogOut,
-  Settings,
-  ChevronDown,
   X,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { UserButton } from '@clerk/nextjs'
 import Tooltip from '@/components/ui/Tooltip'
 
 interface Notification {
@@ -56,11 +53,9 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
   const [notifications, setNotifications] = useState(mockNotifications)
   const searchRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
-  const userMenuRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -71,12 +66,6 @@ export default function Header() {
         !notificationRef.current.contains(event.target as Node)
       ) {
         setShowNotifications(false)
-      }
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(event.target as Node)
-      ) {
-        setShowUserMenu(false)
       }
     }
 
@@ -259,80 +248,17 @@ export default function Header() {
           </AnimatePresence>
         </div>
 
-        {/* User Menu */}
-        <div className='relative' ref={userMenuRef}>
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className='flex items-center gap-2 p-1.5 hover:bg-bg-hover rounded-lg transition-all hover:scale-105'
-          >
-            <div className='w-8 h-8 rounded-full bg-gradient-to-br from-primary to-info text-white flex items-center justify-center font-semibold text-sm shadow-md ring-2 ring-white/50'>
-              JD
-            </div>
-            <ChevronDown
-              size={16}
-              className={`text-text-secondary transition-transform ${
-                showUserMenu ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
-
-          <AnimatePresence>
-            {showUserMenu && (
-              <>
-                <div
-                  className='fixed inset-0 z-[1000]'
-                  onClick={() => setShowUserMenu(false)}
-                />
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className='absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-border z-[1000] overflow-hidden'
-                >
-                  <div className='p-4 border-b border-border'>
-                    <p className='font-semibold text-text-primary'>John Doe</p>
-                    <p className='text-xs text-text-secondary'>
-                      john.doe@hospital.com
-                    </p>
-                  </div>
-                  <div className='py-2'>
-                    <button
-                      onClick={() => {
-                        router.push('/settings')
-                        setShowUserMenu(false)
-                      }}
-                      className='w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-bg-hover transition-colors'
-                    >
-                      <User size={18} className='text-text-secondary' />
-                      Profile
-                    </button>
-                    <button
-                      onClick={() => {
-                        router.push('/settings')
-                        setShowUserMenu(false)
-                      }}
-                      className='w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-bg-hover transition-colors'
-                    >
-                      <Settings size={18} className='text-text-secondary' />
-                      Settings
-                    </button>
-                  </div>
-                  <div className='border-t border-border py-2'>
-                    <button
-                      onClick={() => {
-                        // Handle logout
-                        setShowUserMenu(false)
-                      }}
-                      className='w-full flex items-center gap-3 px-4 py-2 text-sm text-danger hover:bg-danger-lighter transition-colors'
-                    >
-                      <LogOut size={18} />
-                      Logout
-                    </button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+        {/* User Menu - Clerk UserButton */}
+        <div className='relative'>
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: 'w-8 h-8',
+                userButtonPopoverCard: 'shadow-xl',
+              },
+            }}
+            afterSignOutUrl="/sign-in"
+          />
         </div>
       </div>
     </header>
