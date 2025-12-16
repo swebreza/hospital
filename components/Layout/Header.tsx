@@ -1,12 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import {
-  Search,
-  Bell,
-  HelpCircle,
-  X,
-} from 'lucide-react'
+import { Search, Bell, HelpCircle, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
@@ -81,14 +76,16 @@ export default function Header() {
       const response = await fetch('/api/notifications?limit=10')
       const result = await response.json()
       if (result.success) {
-        const formattedNotifications: Notification[] = result.data.map((n: any) => ({
-          id: n.id,
-          title: n.title,
-          message: n.message || n.title,
-          time: formatTimeAgo(new Date(n.createdAt)),
-          type: mapNotificationType(n.type),
-          read: n.isRead,
-        }))
+        const formattedNotifications: Notification[] = result.data.map(
+          (n: any) => ({
+            id: n.id,
+            title: n.title,
+            message: n.message || n.title,
+            time: formatTimeAgo(new Date(n.createdAt)),
+            type: mapNotificationType(n.type),
+            read: n.isRead,
+          })
+        )
         setNotifications(formattedNotifications)
       }
     } catch (error) {
@@ -115,15 +112,20 @@ export default function Header() {
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
     if (diffInSeconds < 60) return 'Just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} mins ago`
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`
     return `${Math.floor(diffInSeconds / 86400)} days ago`
   }
 
-  const mapNotificationType = (type: string): 'info' | 'warning' | 'error' | 'success' => {
+  const mapNotificationType = (
+    type: string
+  ): 'info' | 'warning' | 'error' | 'success' => {
     if (type.includes('OVERDUE') || type.includes('CRITICAL')) return 'error'
     if (type.includes('REMINDER') || type.includes('ASSIGNED')) return 'warning'
-    if (type.includes('RESOLVED') || type.includes('COMPLETED')) return 'success'
+    if (type.includes('RESOLVED') || type.includes('COMPLETED'))
+      return 'success'
     return 'info'
   }
 
@@ -183,16 +185,6 @@ export default function Header() {
     } catch (error) {
       console.error('Error marking all as read:', error)
     }
-  }
-
- {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
-  }
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
   }
 
   const getNotificationColor = (type: string) => {
@@ -337,29 +329,29 @@ export default function Header() {
                       </div>
                     )}
                   </div>
-                      {notifications.length > 0 && (
-                        <div className='p-3 border-t border-border flex gap-2'>
-                          <button
-                            onClick={markAllAsRead}
-                            className='flex-1 text-sm text-primary hover:underline text-center'
-                          >
-                            Mark all as read
-                          </button>
-                          <button className='flex-1 text-sm text-primary hover:underline text-center'>
-                            View all
-                          </button>
-                        </div>
-                      )}
-                      {loadingNotifications && notifications.length === 0 && (
-                        <div className='p-6 text-center text-text-secondary'>
-                          Loading notifications...
-                        </div>
-                      )}
-                      {!loadingNotifications && notifications.length === 0 && (
-                        <div className='p-6 text-center text-text-secondary'>
-                          No notifications
-                        </div>
-                      )}
+                  {notifications.length > 0 && (
+                    <div className='p-3 border-t border-border flex gap-2'>
+                      <button
+                        onClick={markAllAsRead}
+                        className='flex-1 text-sm text-primary hover:underline text-center'
+                      >
+                        Mark all as read
+                      </button>
+                      <button className='flex-1 text-sm text-primary hover:underline text-center'>
+                        View all
+                      </button>
+                    </div>
+                  )}
+                  {loadingNotifications && notifications.length === 0 && (
+                    <div className='p-6 text-center text-text-secondary'>
+                      Loading notifications...
+                    </div>
+                  )}
+                  {!loadingNotifications && notifications.length === 0 && (
+                    <div className='p-6 text-center text-text-secondary'>
+                      No notifications
+                    </div>
+                  )}
                 </motion.div>
               </>
             )}
@@ -375,7 +367,7 @@ export default function Header() {
                 userButtonPopoverCard: 'shadow-xl',
               },
             }}
-            afterSignOutUrl="/sign-in"
+            afterSignOutUrl='/sign-in'
           />
         </div>
       </div>
