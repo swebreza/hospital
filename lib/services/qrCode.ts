@@ -79,14 +79,47 @@ export async function getQRCodeAssetData(assetId: string): Promise<QRCodeAssetDa
     ? Math.ceil((nextCalibrationDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null
 
-  // Get recent complaints (last 5)
-  const recentComplaints = await AssetHistory.find({
-    assetId: asset._id,
-    eventType: 'Complaint',
-  })
-    .sort({ eventDate: -1 })
-    .limit(5)
-    .lean()
+  // Get recent complaints (last 5) from Prisma
+  // Note: We'll fetch from Prisma complaints table instead of AssetHistory
+  let recentComplaints: any[] = []
+  try {
+    const { prisma } = await import('@/lib/prisma')
+    const complaints = await prisma.complaint.findMany({
+      where: { assetId: asset.id },
+      orderBy: { reportedAt: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        reportedAt: true,
+      },
+    })
+    recentComplaints = complaints.map((c) => ({
+      id: c.id,
+      title: c.title,
+      status: c.status,
+      reportedAt: c.reportedAt.toISOString(),
+    }))
+  } catch (error) {
+    console.error('Error fetching complaints for QR:', error)
+    // Fallback to AssetHistory if Prisma fails
+    recentComplaints = await AssetHistory.find({
+      assetId: asset._id,
+      eventType: 'Complaint',
+    })
+      .sort({ eventDate: -1 })
+      .limit(5)
+      .lean()
+      .then((histories) =>
+        histories.map((h) => ({
+          id: h._id.toString(),
+          title: h.description || 'Complaint',
+          status: 'Unknown',
+          reportedAt: h.eventDate.toISOString(),
+        }))
+      )
+  }
 
   // Get documents
   const documents = await Document.find({
@@ -130,12 +163,7 @@ export async function getQRCodeAssetData(assetId: string): Promise<QRCodeAssetDa
       overdue: calDaysUntil !== null && calDaysUntil < 0,
       daysUntil: calDaysUntil,
     },
-    recentComplaints: recentComplaints.map((c) => ({
-      id: c._id.toString(),
-      title: c.description || 'Complaint',
-      status: 'Unknown',
-      reportedAt: c.eventDate.toISOString(),
-    })),
+    recentComplaints,
     documents: documents.map((d) => ({
       id: d._id.toString(),
       fileName: d.fileName,

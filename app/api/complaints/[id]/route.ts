@@ -49,16 +49,41 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
+    // Check authentication and role
+    const { requireRole } = await import('@/lib/auth/api-auth')
+    const authResult = await requireRole(['full_access'])
+    if (authResult.error) {
+      return authResult.error
+    }
+
+    // Get current complaint to check reporter
+    const currentComplaint = await prisma.complaint.findUnique({
+      where: { id },
+      include: {
+        asset: true,
+        reporter: true,
+        assignee: true,
+      },
+    })
+
+    if (!currentComplaint) {
+      return NextResponse.json(
+        { success: false, error: 'Complaint not found' },
+        { status: 404 }
+      )
+    }
+
     const updateData: any = {}
+    const oldStatus = currentComplaint.status
 
     if (body.status) {
       updateData.status = body.status.toUpperCase().replace(' ', '_')
       
       // Track response and resolution times
-      if (body.status === 'InProgress' && !body.respondedAt) {
+      if (body.status === 'IN_PROGRESS' && !currentComplaint.respondedAt) {
         updateData.respondedAt = new Date()
       }
-      if (body.status === 'Resolved' || body.status === 'Closed') {
+      if ((body.status === 'RESOLVED' || body.status === 'CLOSED') && !currentComplaint.resolvedAt) {
         updateData.resolvedAt = new Date()
       }
     }
@@ -68,22 +93,22 @@ export async function PUT(
       
       // Notify assignee
       if (body.assignedTo) {
-        const assignee = await prisma.user.findUnique({
-          where: { id: body.assignedTo },
-        })
+        const { clerkClient } = await import('@clerk/nextjs/server')
+        const client = await clerkClient()
+        const assignee = await client.users.getUser(body.assignedTo)
 
         if (assignee) {
           await notificationService.notifyComplaintAssigned(
             body.assignedTo,
             {
               complaintId: id,
-              assetName: '', // Will be filled from complaint
-              priority: '', // Will be filled from complaint
-              title: '', // Will be filled from complaint
+              assetName: (currentComplaint.asset as any)?.name || 'Unknown Asset',
+              priority: currentComplaint.priority,
+              title: currentComplaint.title,
             },
             {
               sendEmail: true,
-              email: assignee.email || undefined,
+              email: assignee.emailAddresses[0]?.emailAddress,
             }
           )
         }
@@ -111,6 +136,27 @@ export async function PUT(
         assignee: true,
       },
     })
+
+    // Notify reporter (normal user) if status changed
+    if (body.status && body.status !== oldStatus && currentComplaint.reportedBy) {
+      try {
+        const reporterId = currentComplaint.reportedBy as string
+        
+        // Create notification for status change
+        await notificationService.createNotification({
+          userId: reporterId,
+          type: 'COMPLAINT_ASSIGNED' as any, // Using existing type, can be extended in schema
+          title: `Complaint Status Updated: ${complaint.id}`,
+          message: `Your complaint "${complaint.title}" status has been changed to ${body.status}.`,
+          entityType: 'complaint',
+          entityId: id,
+          sendEmail: false, // Can be enabled if needed
+        })
+      } catch (notifError) {
+        console.error('Error notifying reporter:', notifError)
+        // Don't fail the request if notification fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -53,11 +53,79 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [notifications, setNotifications] = useState(mockNotifications)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loadingNotifications, setLoadingNotifications] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  // Fetch notifications
+  useEffect(() => {
+    fetchNotifications()
+    fetchUnreadCount()
+
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(() => {
+      fetchUnreadCount()
+      if (showNotifications) {
+        fetchNotifications()
+      }
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [showNotifications])
+
+  const fetchNotifications = async () => {
+    setLoadingNotifications(true)
+    try {
+      const response = await fetch('/api/notifications?limit=10')
+      const result = await response.json()
+      if (result.success) {
+        const formattedNotifications: Notification[] = result.data.map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          message: n.message || n.title,
+          time: formatTimeAgo(new Date(n.createdAt)),
+          type: mapNotificationType(n.type),
+          read: n.isRead,
+        }))
+        setNotifications(formattedNotifications)
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    } finally {
+      setLoadingNotifications(false)
+    }
+  }
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await fetch('/api/notifications/unread-count')
+      const result = await response.json()
+      if (result.success) {
+        setUnreadCount(result.count)
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error)
+    }
+  }
+
+  const formatTimeAgo = (date: Date): string => {
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    return `${Math.floor(diffInSeconds / 86400)} days ago`
+  }
+
+  const mapNotificationType = (type: string): 'info' | 'warning' | 'error' | 'success' => {
+    if (type.includes('OVERDUE') || type.includes('CRITICAL')) return 'error'
+    if (type.includes('REMINDER') || type.includes('ASSIGNED')) return 'warning'
+    if (type.includes('RESOLVED') || type.includes('COMPLETED')) return 'success'
+    return 'info'
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,7 +151,41 @@ export default function Header() {
     }
   }
 
-  const markNotificationAsRead = (id: string) => {
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notificationId: id }),
+      })
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      )
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ markAll: true }),
+      })
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error('Error marking all as read:', error)
+    }
+  }
+
+ {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     )
@@ -235,13 +337,29 @@ export default function Header() {
                       </div>
                     )}
                   </div>
-                  {notifications.length > 0 && (
-                    <div className='p-3 border-t border-border'>
-                      <button className='w-full text-sm text-primary hover:underline text-center'>
-                        View all notifications
-                      </button>
-                    </div>
-                  )}
+                      {notifications.length > 0 && (
+                        <div className='p-3 border-t border-border flex gap-2'>
+                          <button
+                            onClick={markAllAsRead}
+                            className='flex-1 text-sm text-primary hover:underline text-center'
+                          >
+                            Mark all as read
+                          </button>
+                          <button className='flex-1 text-sm text-primary hover:underline text-center'>
+                            View all
+                          </button>
+                        </div>
+                      )}
+                      {loadingNotifications && notifications.length === 0 && (
+                        <div className='p-6 text-center text-text-secondary'>
+                          Loading notifications...
+                        </div>
+                      )}
+                      {!loadingNotifications && notifications.length === 0 && (
+                        <div className='p-6 text-center text-text-secondary'>
+                          No notifications
+                        </div>
+                      )}
                 </motion.div>
               </>
             )}

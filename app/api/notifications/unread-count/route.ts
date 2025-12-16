@@ -1,17 +1,15 @@
-// Get unread notification count
-
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { notificationService } from '@/lib/services/notificationService'
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const userId = searchParams.get('userId') || ''
+    const { userId } = await auth()
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'User ID required' },
-        { status: 400 }
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
       )
     }
 
@@ -19,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { count },
+      count,
     })
   } catch (error: any) {
     console.error('Error fetching unread count:', error)
@@ -29,6 +27,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
-
-

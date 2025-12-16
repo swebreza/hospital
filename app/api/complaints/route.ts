@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
+    const { userId, role } = authResult
 
     // Calculate SLA deadline based on priority
     let slaDeadline: Date | null = null
@@ -99,6 +100,28 @@ export async function POST(request: NextRequest) {
         break
     }
 
+    // Auto-assign to full access user if complaint is from normal user
+    let assignedTo = body.assignedTo || null
+    if (role === 'normal' && !assignedTo) {
+      // Find a full access user to assign
+      const { clerkClient } = await import('@clerk/nextjs/server')
+      const client = await clerkClient()
+      
+      // Get all users and filter for full_access role
+      const users = await client.users.getUserList({ limit: 100 })
+      const fullAccessUsers = users.data.filter(
+        (user) => user.publicMetadata?.role === 'full_access'
+      )
+      
+      if (fullAccessUsers.length > 0) {
+        // Assign to first available full access user (round-robin could be implemented)
+        assignedTo = fullAccessUsers[0].id
+      }
+    }
+
+    // Set reportedBy to current user if not provided
+    const reportedBy = body.reportedBy || userId
+
     const complaint = await prisma.complaint.create({
       data: {
         id: body.id || `COMP-${Date.now()}`,
@@ -107,8 +130,8 @@ export async function POST(request: NextRequest) {
         description: body.description,
         priority: body.priority,
         status: 'Open',
-        reportedBy: body.reportedBy,
-        assignedTo: body.assignedTo,
+        reportedBy,
+        assignedTo,
         slaDeadline,
       },
       include: {
@@ -117,6 +140,29 @@ export async function POST(request: NextRequest) {
         assignee: true,
       },
     })
+
+    // Send notification to assigned full access user
+    if (assignedTo && role === 'normal') {
+      const { notificationService } = await import('@/lib/services/notificationService')
+      try {
+        await notificationService.notifyComplaintAssigned(
+          assignedTo,
+          {
+            complaintId: complaint.id,
+            assetName: (complaint.asset as any)?.name || 'Unknown Asset',
+            priority: complaint.priority,
+            title: complaint.title,
+          },
+          {
+            sendEmail: true,
+            email: (complaint.assignee as any)?.email,
+          }
+        )
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError)
+        // Don't fail the request if notification fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

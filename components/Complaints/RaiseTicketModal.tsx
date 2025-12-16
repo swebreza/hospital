@@ -1,22 +1,62 @@
 'use client'
 
-import React, { useState } from 'react'
-import { X, QrCode, Camera } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { X, QrCode, Camera, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
+import { useUser } from '@clerk/nextjs'
+import { assetsApi } from '@/lib/api/assets'
+import type { Asset } from '@/lib/types'
 
 interface RaiseTicketModalProps {
   isOpen: boolean
   onClose: () => void
+  initialAssetId?: string
 }
 
 export default function RaiseTicketModal({
   isOpen,
   onClose,
+  initialAssetId,
 }: RaiseTicketModalProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { user } = useUser()
   const [isScanning, setIsScanning] = useState(false)
-  const [assetId, setAssetId] = useState('')
+  const [assetId, setAssetId] = useState(initialAssetId || searchParams.get('assetId') || '')
+  const [asset, setAsset] = useState<Asset | null>(null)
+  const [loadingAsset, setLoadingAsset] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical',
+  })
+
+  // Fetch asset details when assetId changes
+  useEffect(() => {
+    if (assetId && isOpen) {
+      fetchAssetDetails()
+    }
+  }, [assetId, isOpen])
+
+  const fetchAssetDetails = async () => {
+    if (!assetId) return
+    setLoadingAsset(true)
+    try {
+      const response = await assetsApi.getById(assetId)
+      if (response && 'id' in response) {
+        setAsset(response as Asset)
+      }
+    } catch (error) {
+      console.error('Error fetching asset:', error)
+      toast.error('Failed to load asset details')
+    } finally {
+      setLoadingAsset(false)
+    }
+  }
 
   const handleScan = () => {
     setIsScanning(true)
@@ -27,10 +67,59 @@ export default function RaiseTicketModal({
     }, 2000)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast.success('Complaint ticket raised successfully')
-    onClose()
+    
+    if (!assetId) {
+      toast.error('Please select or scan an asset')
+      return
+    }
+
+    if (!user) {
+      toast.error('Please sign in to raise a complaint')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const response = await fetch('/api/complaints', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assetId,
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          reportedBy: user.id,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('Complaint raised successfully!')
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          priority: 'Medium',
+        })
+        setAssetId('')
+        setAsset(null)
+        onClose()
+        // Refresh the page to show new complaint
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to raise complaint')
+      }
+    } catch (error) {
+      console.error('Error submitting complaint:', error)
+      toast.error('Failed to raise complaint. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -86,18 +175,36 @@ export default function RaiseTicketModal({
                     <div className='flex gap-2'>
                       <input
                         value={assetId}
-                        onChange={(e) => setAssetId(e.target.value)}
+                        onChange={(e) => {
+                          setAssetId(e.target.value)
+                          setAsset(null)
+                        }}
                         placeholder='Enter Asset ID or Scan QR'
                         className='flex-1 p-2 border border-border rounded-md focus:ring-2 focus:ring-primary outline-none'
                       />
                       <button
                         onClick={handleScan}
+                        type='button'
                         className='p-2 bg-bg-tertiary hover:bg-bg-hover rounded-md text-text-primary border border-border transition-colors'
                         title='Scan QR Code'
                       >
                         <QrCode size={20} />
                       </button>
                     </div>
+                    {loadingAsset && (
+                      <div className='mt-2 flex items-center gap-2 text-sm text-text-secondary'>
+                        <Loader2 size={14} className='animate-spin' />
+                        Loading asset details...
+                      </div>
+                    )}
+                    {asset && !loadingAsset && (
+                      <div className='mt-2 p-3 bg-primary-light rounded-md'>
+                        <p className='text-sm font-medium text-text-primary'>{asset.name}</p>
+                        <p className='text-xs text-text-secondary'>
+                          {asset.model} • {asset.department} • {asset.location}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -108,6 +215,8 @@ export default function RaiseTicketModal({
                     </label>
                     <input
                       required
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       className='w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary outline-none'
                       placeholder='e.g. System Overheating'
                     />
@@ -119,6 +228,8 @@ export default function RaiseTicketModal({
                     </label>
                     <textarea
                       required
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={3}
                       className='w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary outline-none'
                       placeholder='Describe the issue...'
@@ -129,11 +240,20 @@ export default function RaiseTicketModal({
                     <label className='block text-sm font-medium text-text-primary mb-1'>
                       Priority
                     </label>
-                    <select className='w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary outline-none bg-white'>
-                      <option>Low</option>
-                      <option>Medium</option>
-                      <option>High</option>
-                      <option>Critical</option>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          priority: e.target.value as 'Low' | 'Medium' | 'High' | 'Critical',
+                        })
+                      }
+                      className='w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary outline-none bg-white'
+                    >
+                      <option value='Low'>Low</option>
+                      <option value='Medium'>Medium</option>
+                      <option value='High'>High</option>
+                      <option value='Critical'>Critical</option>
                     </select>
                   </div>
 
@@ -141,8 +261,10 @@ export default function RaiseTicketModal({
                     type='submit'
                     variant='primary'
                     className='w-full mt-2'
+                    disabled={submitting || !assetId}
+                    isLoading={submitting}
                   >
-                    Submit Ticket
+                    {submitting ? 'Submitting...' : 'Submit Ticket'}
                   </Button>
                 </form>
               </div>
