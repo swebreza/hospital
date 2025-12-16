@@ -21,15 +21,18 @@ export const vendorsApi = {
       sortOrder?: 'asc' | 'desc'
     }
   ): Promise<PaginatedResponse<Vendor>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(filters?.search && { search: filters.search }),
-      ...(filters?.status && { status: filters.status }),
-      ...(filters?.minRating && { minRating: filters.minRating.toString() }),
-      ...(filters?.sortBy && { sortBy: filters.sortBy }),
-      ...(filters?.sortOrder && { sortOrder: filters.sortOrder }),
-    })
+    }
+    
+    if (filters?.search) paramsObj.search = filters.search
+    if (filters?.status) paramsObj.status = filters.status
+    if (filters?.minRating !== undefined) paramsObj.minRating = filters.minRating.toString()
+    if (filters?.sortBy) paramsObj.sortBy = filters.sortBy
+    if (filters?.sortOrder) paramsObj.sortOrder = filters.sortOrder
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<Vendor>>(`/vendors?${params.toString()}`)
   },

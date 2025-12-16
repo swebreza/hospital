@@ -46,12 +46,15 @@ export const workOrdersApi = {
     limit = 10,
     filters?: FilterOptions
   ): Promise<PaginatedResponse<WorkOrder>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(filters?.status && { status: filters.status }),
-      ...(filters?.assetId && { assetId: filters.assetId }),
-    })
+    }
+    
+    if (filters?.status) paramsObj.status = filters.status
+    if (filters?.assetId) paramsObj.assetId = filters.assetId as string
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<WorkOrder>>(`/workorders?${params.toString()}`)
   },
@@ -105,4 +108,6 @@ export const workOrdersApi = {
     )
   },
 }
+
+
 

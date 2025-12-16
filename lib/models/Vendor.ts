@@ -124,7 +124,7 @@ VendorSchema.pre('save', function (next) {
   if (this.performanceScore === undefined || this.performanceScore === null) {
     this.performanceScore = 0
   }
-  next()
+  ;(next as (error?: Error) => void)()
 })
 
 // Virtual for active contracts count (will be populated by queries)

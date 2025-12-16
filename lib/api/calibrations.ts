@@ -15,14 +15,17 @@ export const calibrationsApi = {
     limit = 10,
     filters?: FilterOptions
   ): Promise<PaginatedResponse<Calibration>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(filters?.search && { search: filters.search }),
-      ...(filters?.status && { status: filters.status }),
-      ...(filters?.dateFrom && { dateFrom: filters.dateFrom }),
-      ...(filters?.dateTo && { dateTo: filters.dateTo }),
-    })
+    }
+    
+    if (filters?.search) paramsObj.search = filters.search
+    if (filters?.status) paramsObj.status = filters.status
+    if (filters?.dateFrom) paramsObj.dateFrom = filters.dateFrom
+    if (filters?.dateTo) paramsObj.dateTo = filters.dateTo
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<Calibration>>(`/calibrations?${params.toString()}`)
   },
@@ -91,4 +94,6 @@ export const calibrationsApi = {
     )
   },
 }
+
+
 

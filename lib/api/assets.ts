@@ -18,23 +18,26 @@ export const assetsApi = {
     limit = 10,
     filters?: FilterOptions
   ): Promise<PaginatedResponse<Asset>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(filters?.search && { search: filters.search }),
-      ...(filters?.status && { status: filters.status }),
-      ...(filters?.department && { department: filters.department }),
-      ...(filters?.assetType && { assetType: filters.assetType }),
-      ...(filters?.modality && { modality: filters.modality }),
-      ...(filters?.criticality && { criticality: filters.criticality }),
-      ...(filters?.oem && { oem: filters.oem }),
-      ...(filters?.lifecycleState && { lifecycleState: filters.lifecycleState }),
-      ...(filters?.isMinorAsset !== undefined && { isMinorAsset: String(filters.isMinorAsset) }),
-      ...(filters?.farNumber && { farNumber: filters.farNumber }),
-      ...(filters?.replacementRecommended !== undefined && {
-        replacementRecommended: String(filters.replacementRecommended),
-      }),
-    })
+    }
+    
+    if (filters?.search) paramsObj.search = filters.search
+    if (filters?.status) paramsObj.status = filters.status
+    if (filters?.department) paramsObj.department = filters.department
+    if (filters?.assetType) paramsObj.assetType = filters.assetType
+    if (filters?.modality) paramsObj.modality = filters.modality
+    if (filters?.criticality) paramsObj.criticality = filters.criticality as string
+    if (filters?.oem) paramsObj.oem = filters.oem
+    if (filters?.lifecycleState) paramsObj.lifecycleState = filters.lifecycleState as string
+    if (filters?.isMinorAsset !== undefined) paramsObj.isMinorAsset = String(filters.isMinorAsset)
+    if (filters?.farNumber) paramsObj.farNumber = filters.farNumber
+    if (filters?.replacementRecommended !== undefined) {
+      paramsObj.replacementRecommended = String(filters.replacementRecommended)
+    }
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<Asset>>(`/assets?${params.toString()}`)
   },
@@ -99,12 +102,15 @@ export const assetsApi = {
     format: 'excel' | 'pdf',
     filters?: FilterOptions
   ): Promise<Blob> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       format,
-      ...(filters?.search && { search: filters.search }),
-      ...(filters?.status && { status: filters.status }),
-      ...(filters?.department && { department: filters.department }),
-    })
+    }
+    
+    if (filters?.search) paramsObj.search = filters.search
+    if (filters?.status) paramsObj.status = filters.status
+    if (filters?.department) paramsObj.department = filters.department
+    
+    const params = new URLSearchParams(paramsObj)
 
     const response = await fetch(`/api/assets/export?${params.toString()}`)
     if (!response.ok) throw new Error('Export failed')
@@ -246,11 +252,14 @@ export const assetsApi = {
     limit = 10,
     department?: string
   ): Promise<PaginatedResponse<Asset>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(department && { department }),
-    })
+    }
+    
+    if (department) paramsObj.department = department
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<Asset>>(`/assets/minor?${params.toString()}`)
   },

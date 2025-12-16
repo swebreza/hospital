@@ -19,14 +19,17 @@ export const contractsApi = {
       expiringDays?: number
     }
   ): Promise<PaginatedResponse<Contract>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(filters?.vendorId && { vendorId: filters.vendorId }),
-      ...(filters?.type && { type: filters.type }),
-      ...(filters?.status && { status: filters.status }),
-      ...(filters?.expiringDays && { expiringDays: filters.expiringDays.toString() }),
-    })
+    }
+    
+    if (filters?.vendorId) paramsObj.vendorId = filters.vendorId
+    if (filters?.type) paramsObj.type = filters.type
+    if (filters?.status) paramsObj.status = filters.status
+    if (filters?.expiringDays !== undefined) paramsObj.expiringDays = filters.expiringDays.toString()
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<Contract>>(`/contracts?${params.toString()}`)
   },
@@ -69,10 +72,13 @@ export const contractsApi = {
       info: number
     }
   }>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       days: days.toString(),
-      ...(vendorId && { vendorId }),
-    })
+    }
+    
+    if (vendorId) paramsObj.vendorId = vendorId
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<ApiResponse<Array<Contract & {
       daysUntilExpiry: number

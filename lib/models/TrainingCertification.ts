@@ -92,6 +92,7 @@ TrainingCertificationSchema.pre('save', function (next) {
     const random = Math.random().toString(36).substring(2, 6).toUpperCase()
     this.certificationNumber = `${prefix}-${timestamp}-${random}`
   }
+  ;(next as (error?: Error) => void)()
 
   // Calculate improvement percentage if both scores exist
   if (this.preTestScore !== undefined && this.postTestScore !== undefined && this.preTestScore > 0) {

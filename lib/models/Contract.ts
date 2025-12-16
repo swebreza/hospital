@@ -97,10 +97,11 @@ ContractSchema.virtual('daysUntilExpiry').get(function () {
 
 // Virtual field: is expiring soon (30, 60, 90 days)
 ContractSchema.virtual('isExpiringSoon').get(function () {
-  if (this.status !== 'Active') return { isExpiring: false, days: null, level: null }
-  const days = this.daysUntilExpiry
+  if (this.status !== 'Active')
+    return { isExpiring: false, days: null, level: null }
+  const days = (this as any).daysUntilExpiry as number | null
   if (days === null) return { isExpiring: false, days: null, level: null }
-  
+
   if (days < 0) {
     return { isExpiring: true, days, level: 'expired' }
   } else if (days <= 30) {
@@ -134,9 +135,11 @@ ContractSchema.methods.checkExpiryStatus = function () {
 ContractSchema.pre('save', function (next) {
   // Validate end date is after start date
   if (this.endDate <= this.startDate) {
-    return next(new Error('End date must be after start date'))
+    return (next as (error?: Error) => void)(
+      new Error('End date must be after start date')
+    )
   }
-  
+
   // Auto-update status based on dates
   if (this.status === 'Active') {
     const now = new Date()
@@ -144,20 +147,21 @@ ContractSchema.pre('save', function (next) {
       this.status = 'Expired'
     }
   }
-  
+
   // Set renewal date if not provided (30 days before expiry)
   if (!this.renewalDate && this.endDate) {
     this.renewalDate = this.calculateRenewalDate()
   }
-  
-  next()
+
+  ;(next as (error?: Error) => void)()
 })
 
 // Ensure virtuals are included in JSON output
 ContractSchema.set('toJSON', { virtuals: true })
 ContractSchema.set('toObject', { virtuals: true })
 
-const Contract = mongoose.models.Contract || mongoose.model<IContract>('Contract', ContractSchema)
+const Contract =
+  mongoose.models.Contract ||
+  mongoose.model<IContract>('Contract', ContractSchema)
 
 export default Contract
-

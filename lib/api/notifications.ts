@@ -25,11 +25,14 @@ export const notificationsApi = {
     limit = 20,
     unreadOnly = false
   ): Promise<PaginatedResponse<Notification>> => {
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       page: page.toString(),
       limit: limit.toString(),
-      ...(unreadOnly && { unreadOnly: 'true' }),
-    })
+    }
+    
+    if (unreadOnly) paramsObj.unreadOnly = 'true'
+    
+    const params = new URLSearchParams(paramsObj)
 
     return apiGet<PaginatedResponse<Notification>>(`/notifications?${params.toString()}`)
   },
@@ -49,4 +52,6 @@ export const notificationsApi = {
     return apiGet<ApiResponse<{ count: number }>>('/notifications/unread-count')
   },
 }
+
+
 
