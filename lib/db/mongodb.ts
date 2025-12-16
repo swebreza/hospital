@@ -1,9 +1,15 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.DATABASE_URL || ''
+// Hardcoded database URL (for development)
+const HARDCODED_DATABASE_URL =
+  'mongodb+srv://swebreza_db_user:FVcpTVpbigdWu4pS@cluster0.j23odu6.mongodb.net/hospital?retryWrites=true&w=majority'
+
+const MONGODB_URI = process.env.DATABASE_URL || HARDCODED_DATABASE_URL
 
 if (!MONGODB_URI) {
-  throw new Error('Please define the DATABASE_URL environment variable inside .env.local')
+  throw new Error(
+    'Please define the DATABASE_URL environment variable inside .env.local'
+  )
 }
 
 interface MongooseCache {
@@ -49,4 +55,3 @@ async function connectDB(): Promise<typeof mongoose> {
 }
 
 export default connectDB
-
