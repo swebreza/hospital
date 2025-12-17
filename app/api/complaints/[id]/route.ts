@@ -73,13 +73,15 @@ export async function PUT(
     const oldStatus = currentComplaint.status
 
     if (body.status) {
-      updateData.status = body.status.toUpperCase().replace(' ', '_')
+      // Normalize status: convert to uppercase and replace spaces with underscores
+      const normalizedStatus = body.status.toUpperCase().replace(/\s+/g, '_')
+      updateData.status = normalizedStatus
       
-      // Track response and resolution times
-      if (body.status === 'IN_PROGRESS' && !currentComplaint.respondedAt) {
+      // Track response and resolution times based on normalized status
+      if (normalizedStatus === 'IN_PROGRESS' && !currentComplaint.respondedAt) {
         updateData.respondedAt = new Date()
       }
-      if ((body.status === 'RESOLVED' || body.status === 'CLOSED') && !currentComplaint.resolvedAt) {
+      if ((normalizedStatus === 'RESOLVED' || normalizedStatus === 'CLOSED') && !currentComplaint.resolvedAt) {
         updateData.resolvedAt = new Date()
       }
     }
@@ -175,9 +177,20 @@ export async function PUT(
     })
   } catch (error: any) {
     console.error('Error updating complaint:', error)
+    
+    // Provide more detailed error messages
+    let errorMessage = 'Failed to update complaint'
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error.code === 'P2002') {
+      errorMessage = 'A complaint with this ID already exists'
+    } else if (error.code === 'P2025') {
+      errorMessage = 'Complaint not found'
+    }
+    
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to update complaint' },
-      { status: 500 }
+      { success: false, error: errorMessage },
+      { status: error.status || 500 }
     )
   }
 }

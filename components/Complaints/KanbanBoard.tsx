@@ -162,13 +162,24 @@ export default function KanbanBoard() {
       setUpdatingId(ticket.id);
       try {
         const newStatus = columnToStatus[destination.droppableId];
-        await complaintsApi.update(ticket.id, { status: newStatus });
-        toast.success('Complaint status updated');
-        // Refresh to get latest data
-        await fetchComplaints();
+        if (!newStatus) {
+          throw new Error(`Invalid destination column: ${destination.droppableId}`);
+        }
+        
+        console.log('Updating complaint:', ticket.id, 'to status:', newStatus);
+        const result = await complaintsApi.update(ticket.id, { status: newStatus });
+        
+        if (result.success) {
+          toast.success('Complaint status updated');
+          // Refresh to get latest data
+          await fetchComplaints();
+        } else {
+          throw new Error(result.error || 'Failed to update complaint status');
+        }
       } catch (err: any) {
         console.error('Error updating complaint:', err);
-        toast.error('Failed to update complaint status');
+        const errorMessage = err?.message || err?.error || 'Failed to update complaint status';
+        toast.error(errorMessage);
         // Revert optimistic update
         await fetchComplaints();
       } finally {
@@ -224,11 +235,21 @@ export default function KanbanBoard() {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-6 h-full overflow-x-auto pb-4">
+      <div 
+        className="flex gap-4 sm:gap-6 h-full overflow-x-auto pb-4 px-2 sm:px-0" 
+        style={{ 
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+        }}
+      >
         {columnConfig.map(({ id, label, icon: Icon, color }) => {
           const tickets = columns[id] || [];
           return (
-            <div key={id} className="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-4 flex flex-col">
+            <div 
+              key={id} 
+              className="flex-1 min-w-[260px] sm:min-w-[300px] bg-gray-100 rounded-xl p-3 sm:p-4 flex flex-col"
+              style={{ touchAction: 'pan-y' }}
+            >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold capitalize text-gray-700 flex items-center gap-2">
                   <Icon size={18} className={color} />
@@ -247,9 +268,10 @@ export default function KanbanBoard() {
                   <div
                     {...provided.droppableProps}
                     ref={provided.innerRef}
-                    className={`flex-1 flex flex-col gap-3 min-h-[200px] ${
+                    className={`flex-1 flex flex-col gap-2 sm:gap-3 min-h-[200px] ${
                       snapshot.isDraggingOver ? 'bg-gray-50 rounded-lg' : ''
                     }`}
+                    style={{ touchAction: 'pan-y' }}
                   >
                     {tickets.length === 0 ? (
                       <div className="flex-1 flex items-center justify-center text-center py-8">
@@ -268,16 +290,23 @@ export default function KanbanBoard() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer ${
+                              style={{
+                                ...provided.draggableProps.style,
+                                touchAction: 'none', // Enable touch dragging
+                              }}
+                              className={`bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing ${
                                 snapshot.isDragging
                                   ? 'shadow-lg ring-2 ring-primary rotate-2'
                                   : ''
                               } ${
                                 updatingId === ticket.id ? 'opacity-50' : ''
                               }`}
-                              onClick={() => {
-                                setSelectedComplaint(ticket.complaint);
-                                setShowDetailsModal(true);
+                              onClick={(e) => {
+                                // Only open modal if not dragging
+                                if (!snapshot.isDragging) {
+                                  setSelectedComplaint(ticket.complaint);
+                                  setShowDetailsModal(true);
+                                }
                               }}
                             >
                               <div className="flex justify-between items-start mb-2">

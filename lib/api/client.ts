@@ -33,6 +33,15 @@ async function handleResponse<T>(response: Response): Promise<T> {
       (typeof data === 'string' && data) ||
       `HTTP error! status: ${response.status}`
     
+    // Log full error details for debugging
+    console.error('API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      error: errorMessage,
+      data,
+    })
+    
     throw new ApiError(
       errorMessage,
       response.status,
