@@ -1,33 +1,36 @@
 // Complaints API functions
 
 import { apiGet, apiPost, apiPut, apiDelete } from './client'
-import type {
-  Complaint,
-  ApiResponse,
-  PaginatedResponse,
-  FilterOptions,
-} from '../types'
+import type { ApiResponse, PaginatedResponse, Complaint, ComplaintPriority, ComplaintStatus } from '../types'
+
+export interface ComplaintFilters {
+  status?: string
+  priority?: string
+  assetId?: string
+  reportedBy?: string
+  assignedTo?: string
+  page?: number
+  limit?: number
+}
 
 export const complaintsApi = {
   // Get all complaints with pagination and filters
   getAll: async (
-    page = 1,
-    limit = 10,
-    filters?: FilterOptions
+    filters?: ComplaintFilters
   ): Promise<PaginatedResponse<Complaint>> => {
-    const paramsObj: Record<string, string> = {
-      page: page.toString(),
-      limit: limit.toString(),
-    }
+    const paramsObj: Record<string, string> = {}
     
-    if (filters?.search) paramsObj.search = filters.search
+    if (filters?.page) paramsObj.page = filters.page.toString()
+    if (filters?.limit) paramsObj.limit = filters.limit.toString()
     if (filters?.status) paramsObj.status = filters.status
-    if (filters?.priority && typeof filters.priority === 'string') paramsObj.priority = filters.priority
-    if (filters?.department) paramsObj.department = filters.department
-    
-    const params = new URLSearchParams(paramsObj)
+    if (filters?.priority) paramsObj.priority = filters.priority
+    if (filters?.assetId) paramsObj.assetId = filters.assetId
+    if (filters?.reportedBy) paramsObj.reportedBy = filters.reportedBy
+    if (filters?.assignedTo) paramsObj.assignedTo = filters.assignedTo
 
-    return apiGet<PaginatedResponse<Complaint>>(`/complaints?${params.toString()}`)
+    const params = new URLSearchParams(paramsObj)
+    const response = await apiGet<PaginatedResponse<Complaint>>(`/complaints?${params.toString()}`)
+    return response
   },
 
   // Get single complaint by ID
@@ -36,14 +39,28 @@ export const complaintsApi = {
   },
 
   // Create new complaint
-  create: async (data: Partial<Complaint>): Promise<ApiResponse<Complaint>> => {
-    return apiPost<ApiResponse<Complaint>>('/complaints', data)
+  create: async (data: {
+    assetId: string
+    title: string
+    description: string
+    priority: ComplaintPriority
+    reportedBy: string
+    assignedTo?: string
+  }): Promise<ApiResponse<Complaint>> => {
+    const response = await apiPost<ApiResponse<Complaint>>('/complaints', data)
+    return response
   },
 
   // Update complaint
   update: async (
     id: string,
-    data: Partial<Complaint>
+    data: {
+      status?: ComplaintStatus | string
+      assignedTo?: string
+      rootCause?: string
+      resolution?: string
+      downtimeMinutes?: number
+    }
   ): Promise<ApiResponse<Complaint>> => {
     return apiPut<ApiResponse<Complaint>>(`/complaints/${id}`, data)
   },
@@ -53,26 +70,15 @@ export const complaintsApi = {
     return apiDelete<ApiResponse<void>>(`/complaints/${id}`)
   },
 
-  // Create work order from complaint
-  createWorkOrder: async (
-    complaintId: string,
-    data: any
-  ): Promise<ApiResponse<{ id: string }>> => {
-    return apiPost<ApiResponse<{ id: string }>>('/complaints/workorders', {
-      complaintId,
-      ...data,
-    })
-  },
-
-  // Request acknowledgement for complaint closure
-  requestAcknowledgement: async (
-    complaintId: string,
-    userId: string
-  ): Promise<ApiResponse<void>> => {
-    return apiPost<ApiResponse<void>>('/complaints/acknowledgements', {
-      complaintId,
-      userId,
+  // Confirm resolution
+  confirmResolution: async (
+    id: string,
+    confirmed: boolean,
+    feedback?: string
+  ): Promise<ApiResponse<Complaint>> => {
+    return apiPost<ApiResponse<Complaint>>(`/complaints/${id}/confirm-resolution`, {
+      confirmed,
+      feedback,
     })
   },
 }
-

@@ -5,6 +5,7 @@ import type { PaginatedResponse, Asset as IAsset, FilterOptions } from '@/lib/ty
 import { createAssetHistory } from '@/lib/services/assetHistory'
 import { calculateAssetAge } from '@/lib/services/lifecycleAnalysis'
 import { requireRole } from '@/lib/auth/api-auth'
+import { generateQRCodeData } from '@/lib/services/qrCode'
 
 export async function GET(request: NextRequest) {
   const authResult = await requireRole(['normal', 'full_access'])
@@ -149,9 +150,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Generate QR code for the asset
+    const qrCode = generateQRCodeData(body.id)
+
     // Create asset
     const asset = new Asset({
       ...body,
+      qrCode,
       status: body.status || 'Active',
       lifecycleState: body.lifecycleState || 'Active',
       isMinorAsset: body.isMinorAsset || false,

@@ -1,13 +1,15 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { X, FileText, Clock, File, Download } from 'lucide-react'
+import { X, FileText, Clock, File, Download, QrCode } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Asset } from '@/lib/store'
 import Button from '@/components/ui/Button'
 import AssetHistoryTimeline from './AssetHistoryTimeline'
 import { assetsApi } from '@/lib/api/assets'
 import type { AssetHistory } from '@/lib/types'
+import QRCodeGenerator from './QRCodeGenerator'
+import { toast } from 'sonner'
 
 interface AssetDrawerProps {
   isOpen: boolean
@@ -20,12 +22,38 @@ export default function AssetDrawer({
   onClose,
   asset,
 }: AssetDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'info' | 'history' | 'docs'>(
+  const [activeTab, setActiveTab] = useState<'info' | 'history' | 'docs' | 'qr'>(
     'info'
   )
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null)
+  const [loadingQR, setLoadingQR] = useState(false)
   const [history, setHistory] = useState<AssetHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const loadedAssetIdRef = React.useRef<string | null>(null)
+
+  // Fetch QR code when QR tab is opened
+  useEffect(() => {
+    if (asset?.id && activeTab === 'qr' && !qrCodeData) {
+      setLoadingQR(true)
+      assetsApi
+        .generateQR(asset.id)
+        .then((response) => {
+          if (response.success && response.data) {
+            setQrCodeData(response.data.qrCode || asset.qrCode || null)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load QR code:', error)
+          // Fallback to asset.qrCode if available
+          setQrCodeData(asset.qrCode || null)
+        })
+        .finally(() => {
+          setLoadingQR(false)
+        })
+    } else if (asset?.qrCode && activeTab === 'qr' && !qrCodeData) {
+      setQrCodeData(asset.qrCode)
+    }
+  }, [asset?.id, activeTab, qrCodeData, asset?.qrCode])
 
   useEffect(() => {
     // Only fetch if we have an asset ID, are on history tab, and haven't loaded this asset yet
@@ -114,6 +142,7 @@ export default function AssetDrawer({
                 { id: 'info', label: 'Information', icon: FileText },
                 { id: 'history', label: 'History', icon: Clock },
                 { id: 'docs', label: 'Documents', icon: File },
+                { id: 'qr', label: 'QR Code', icon: QrCode },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -216,6 +245,86 @@ export default function AssetDrawer({
                   <DocItem name='Installation Report.pdf' size='1.1 MB' />
                   <DocItem name='Warranty Certificate.pdf' size='850 KB' />
                   <DocItem name='Calibration Certificate.pdf' size='1.5 MB' />
+                </div>
+              )}
+
+              {activeTab === 'qr' && (
+                <div className='space-y-4'>
+                  {loadingQR ? (
+                    <div className='text-center py-8'>
+                      <div className='w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2' />
+                      <p className='text-text-secondary'>Loading QR code...</p>
+                    </div>
+                  ) : qrCodeData ? (
+                    <div className='flex flex-col items-center'>
+                      <QRCodeGenerator
+                        value={qrCodeData}
+                        assetName={asset.name}
+                        size={250}
+                        showDownload={true}
+                      />
+                      <div className='mt-4 p-3 bg-bg-secondary rounded-lg w-full'>
+                        <label className='text-xs text-text-secondary font-medium mb-1 block'>
+                          QR Code URL
+                        </label>
+                        <div className='flex items-center gap-2'>
+                          <input
+                            type='text'
+                            value={qrCodeData}
+                            readOnly
+                            className='flex-1 p-2 text-sm border border-border rounded-md bg-white font-mono text-xs'
+                          />
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => {
+                              navigator.clipboard.writeText(qrCodeData)
+                              toast.success('QR code URL copied!')
+                            }}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      </div>
+                      <div className='mt-4 text-center'>
+                        <p className='text-sm text-text-secondary mb-2'>
+                          Scan this QR code to view asset details
+                        </p>
+                        <Button
+                          variant='outline'
+                          onClick={() => {
+                            window.open(qrCodeData, '_blank')
+                          }}
+                        >
+                          Open QR Page
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='text-center py-8'>
+                      <p className='text-text-secondary mb-4'>
+                        QR code not available for this asset
+                      </p>
+                      <Button
+                        variant='primary'
+                        onClick={async () => {
+                          setLoadingQR(true)
+                          try {
+                            const response = await assetsApi.generateQR(asset.id)
+                            if (response.success && response.data) {
+                              setQrCodeData(response.data.qrCode)
+                            }
+                          } catch (error) {
+                            console.error('Failed to generate QR code:', error)
+                          } finally {
+                            setLoadingQR(false)
+                          }
+                        }}
+                      >
+                        Generate QR Code
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

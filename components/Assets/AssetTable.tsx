@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Search, Filter, Eye, Trash2 } from 'lucide-react'
+import { Search, Filter, Eye, Trash2, QrCode } from 'lucide-react'
 import { useStore, Asset } from '@/lib/store'
 import { toast } from 'sonner'
 import AssetDrawer from './AssetDrawer'
@@ -250,6 +250,22 @@ export default function AssetTable(props: AssetTableProps = {}) {
                         title='View Details'
                       >
                         <Eye size={18} />
+                      </button>
+                      <button
+                        className='p-2 hover:bg-info-light rounded-lg text-text-secondary hover:text-info transition-all hover:scale-110'
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (asset.qrCode) {
+                            window.open(asset.qrCode, '_blank')
+                          } else {
+                            toast.info('QR code not generated yet. Opening asset details to generate.')
+                            handleRowClick(asset)
+                            // The drawer will show QR tab where user can generate
+                          }
+                        }}
+                        title='View QR Code'
+                      >
+                        <QrCode size={18} />
                       </button>
                       <button
                         className='p-2 hover:bg-danger-light rounded-lg text-text-secondary hover:text-danger transition-all hover:scale-110'

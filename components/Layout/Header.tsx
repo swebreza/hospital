@@ -16,33 +16,6 @@ interface Notification {
   read: boolean
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'PM Due Today',
-    message: 'Ventilator (AST-002) requires preventive maintenance',
-    time: '5 mins ago',
-    type: 'warning',
-    read: false,
-  },
-  {
-    id: '2',
-    title: 'Calibration Expiring',
-    message: 'Defibrillator calibration expires in 3 days',
-    time: '1 hour ago',
-    type: 'info',
-    read: false,
-  },
-  {
-    id: '3',
-    title: 'Complaint Resolved',
-    message: 'MRI Scanner breakdown has been resolved',
-    time: '2 hours ago',
-    type: 'success',
-    read: true,
-  },
-]
-
 export default function Header() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
@@ -68,6 +41,7 @@ export default function Header() {
     }, 30000)
 
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNotifications])
 
   const fetchNotifications = async () => {
@@ -77,7 +51,14 @@ export default function Header() {
       const result = await response.json()
       if (result.success) {
         const formattedNotifications: Notification[] = result.data.map(
-          (n: any) => ({
+          (n: {
+            id: string
+            title: string
+            message?: string
+            createdAt: string
+            type: string
+            isRead: boolean
+          }) => ({
             id: n.id,
             title: n.title,
             message: n.message || n.title,

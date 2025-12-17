@@ -26,6 +26,21 @@ export async function GET(request: NextRequest) {
     if (priority) {
       where.priority = priority
     }
+    // Filter by reportedBy if provided
+    const reportedBy = searchParams.get('reportedBy')
+    if (reportedBy) {
+      where.reportedBy = reportedBy
+    }
+    // Filter by assignedTo if provided
+    const assignedTo = searchParams.get('assignedTo')
+    if (assignedTo) {
+      where.assignedTo = assignedTo
+    }
+    // Filter by assetId if provided
+    const assetId = searchParams.get('assetId')
+    if (assetId) {
+      where.assetId = assetId
+    }
 
     const [complaints, total] = await Promise.all([
       prisma.complaint.findMany({

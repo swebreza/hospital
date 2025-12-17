@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button'
 import { useUser } from '@clerk/nextjs'
 import { assetsApi } from '@/lib/api/assets'
 import type { Asset } from '@/lib/types'
+import QRCodeScanner from '@/components/Assets/QRCodeScanner'
 
 interface RaiseTicketModalProps {
   isOpen: boolean
@@ -24,7 +25,7 @@ export default function RaiseTicketModal({
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useUser()
-  const [isScanning, setIsScanning] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
   const [assetId, setAssetId] = useState(initialAssetId || searchParams.get('assetId') || '')
   const [asset, setAsset] = useState<Asset | null>(null)
   const [loadingAsset, setLoadingAsset] = useState(false)
@@ -58,13 +59,13 @@ export default function RaiseTicketModal({
     }
   }
 
-  const handleScan = () => {
-    setIsScanning(true)
-    setTimeout(() => {
-      setIsScanning(false)
-      setAssetId('AST-001 (MRI Scanner)')
-      toast.success('Asset scanned successfully')
-    }, 2000)
+  const handleScanResult = (scannedId: string) => {
+    setAssetId(scannedId)
+    setShowScanner(false)
+    // Fetch asset details after scanning
+    if (scannedId) {
+      fetchAssetDetails()
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,60 +154,44 @@ export default function RaiseTicketModal({
               </div>
 
               <div className='p-6'>
-                {isScanning ? (
-                  <div className='aspect-video bg-black rounded-lg flex flex-col items-center justify-center text-white mb-6 relative overflow-hidden'>
-                    <motion.div
-                      className='absolute top-0 w-full h-1 bg-green-500 shadow-[0_0_10px_#22c55e]'
-                      animate={{ top: ['0%', '100%', '0%'] }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'linear',
+                <div className='mb-6'>
+                  <label className='block text-sm font-medium text-text-primary mb-2'>
+                    Asset ID
+                  </label>
+                  <div className='flex gap-2'>
+                    <input
+                      value={assetId}
+                      onChange={(e) => {
+                        setAssetId(e.target.value)
+                        setAsset(null)
                       }}
+                      placeholder='Enter Asset ID or Scan QR'
+                      className='flex-1 p-2 border border-border rounded-md focus:ring-2 focus:ring-primary outline-none'
                     />
-                    <Camera size={48} className='mb-2 opacity-50' />
-                    <p className='text-sm'>Scanning QR Code...</p>
+                    <button
+                      onClick={() => setShowScanner(true)}
+                      type='button'
+                      className='p-2 bg-bg-tertiary hover:bg-bg-hover rounded-md text-text-primary border border-border transition-colors'
+                      title='Scan QR Code'
+                    >
+                      <QrCode size={20} />
+                    </button>
                   </div>
-                ) : (
-                  <div className='mb-6'>
-                    <label className='block text-sm font-medium text-text-primary mb-2'>
-                      Asset ID
-                    </label>
-                    <div className='flex gap-2'>
-                      <input
-                        value={assetId}
-                        onChange={(e) => {
-                          setAssetId(e.target.value)
-                          setAsset(null)
-                        }}
-                        placeholder='Enter Asset ID or Scan QR'
-                        className='flex-1 p-2 border border-border rounded-md focus:ring-2 focus:ring-primary outline-none'
-                      />
-                      <button
-                        onClick={handleScan}
-                        type='button'
-                        className='p-2 bg-bg-tertiary hover:bg-bg-hover rounded-md text-text-primary border border-border transition-colors'
-                        title='Scan QR Code'
-                      >
-                        <QrCode size={20} />
-                      </button>
+                  {loadingAsset && (
+                    <div className='mt-2 flex items-center gap-2 text-sm text-text-secondary'>
+                      <Loader2 size={14} className='animate-spin' />
+                      Loading asset details...
                     </div>
-                    {loadingAsset && (
-                      <div className='mt-2 flex items-center gap-2 text-sm text-text-secondary'>
-                        <Loader2 size={14} className='animate-spin' />
-                        Loading asset details...
-                      </div>
-                    )}
-                    {asset && !loadingAsset && (
-                      <div className='mt-2 p-3 bg-primary-light rounded-md'>
-                        <p className='text-sm font-medium text-text-primary'>{asset.name}</p>
-                        <p className='text-xs text-text-secondary'>
-                          {asset.model} • {asset.department} • {asset.location}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                  {asset && !loadingAsset && (
+                    <div className='mt-2 p-3 bg-primary-light rounded-md'>
+                      <p className='text-sm font-medium text-text-primary'>{asset.name}</p>
+                      <p className='text-xs text-text-secondary'>
+                        {asset.model} • {asset.department} • {asset.location}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 <form onSubmit={handleSubmit} className='space-y-4'>
                   <div>
@@ -271,6 +256,14 @@ export default function RaiseTicketModal({
             </div>
           </motion.div>
         </>
+      )}
+
+      {/* QR Scanner Modal */}
+      {showScanner && (
+        <QRCodeScanner
+          onScan={handleScanResult}
+          onClose={() => setShowScanner(false)}
+        />
       )}
     </AnimatePresence>
   )

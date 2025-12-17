@@ -3,6 +3,7 @@ import connectDB from '@/lib/db/mongodb'
 import Asset from '@/lib/models/Asset'
 import type { Asset as IAsset } from '@/lib/types'
 import { trackAssetUpdate } from '@/lib/services/assetHistory'
+import { generateQRCodeData } from '@/lib/services/qrCode'
 
 export async function GET(
   request: NextRequest,
@@ -95,6 +96,9 @@ export async function PUT(
     const changes: Record<string, { old: unknown; new: unknown }> = {}
     const performedBy = body.performedBy || body.updatedBy
 
+    // Check if asset ID is being changed
+    const idChanged = body.id && body.id !== id
+
     Object.keys(body).forEach((key) => {
       if (key !== 'performedBy' && key !== 'updatedBy' && key !== '_id' && key !== '__v') {
         const oldValue = asset.get(key)
@@ -107,6 +111,13 @@ export async function PUT(
 
     // Update asset
     Object.assign(asset, body)
+
+    // Regenerate QR code if ID changed or QR code doesn't exist
+    if (idChanged || !asset.qrCode) {
+      const newAssetId = body.id || id
+      asset.qrCode = generateQRCodeData(newAssetId)
+    }
+
     await asset.save()
 
     // Create history entries for changes
