@@ -50,7 +50,8 @@ const initialColumns: Record<string, Ticket[]> = {
   closed: [],
 };
 
-export default function KanbanBoard() {
+// Forward ref to expose refresh method
+const KanbanBoard = React.forwardRef<{ refresh?: () => void }, {}>((props, ref) => {
   const { user } = useUser();
   const userRole = useClientUserRole();
   const [columns, setColumns] = useState<Record<string, Ticket[]>>(initialColumns);
@@ -60,37 +61,19 @@ export default function KanbanBoard() {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  // Fetch complaints from database
-  useEffect(() => {
-    fetchComplaints();
-    
-    // Poll for updates every 30 seconds
-    const interval = setInterval(() => {
-      fetchComplaints();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [user?.id, userRole]);
-
+  // Fetch complaints from database - GLOBAL VIEW (all complaints from database)
   const fetchComplaints = async () => {
-    if (!user?.id) return;
-
     setLoading(true);
     setError(null);
 
     try {
-      // Build filters based on user role
+      // Fetch ALL complaints globally from database (no user filtering)
       const filters: any = {
         page: 1,
-        limit: 100, // Get all complaints for now
+        limit: 1000, // Get all complaints - this is global view
       };
 
-      // Normal users only see their own complaints
-      if (userRole === 'normal') {
-        filters.reportedBy = user.id;
-      }
-      // Full access users see all complaints
-
+      // No filtering - show ALL complaints from database
       const response = await complaintsApi.getAll(filters);
 
       if (response && response.data) {
@@ -128,6 +111,22 @@ export default function KanbanBoard() {
       setLoading(false);
     }
   };
+
+  // Expose refresh method via ref
+  React.useImperativeHandle(ref, () => ({
+    refresh: fetchComplaints,
+  }));
+
+  // Fetch on mount and poll for updates every 30 seconds
+  useEffect(() => {
+    fetchComplaints();
+    
+    const interval = setInterval(() => {
+      fetchComplaints();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []); // Fetch on mount - no dependencies, shows ALL complaints
 
   const formatTimeAgo = (dateString: string): string => {
     try {
@@ -370,4 +369,8 @@ export default function KanbanBoard() {
       />
     </DragDropContext>
   );
-}
+});
+
+KanbanBoard.displayName = 'KanbanBoard';
+
+export default KanbanBoard;
