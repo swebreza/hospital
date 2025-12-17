@@ -23,18 +23,18 @@ export async function GET(request: NextRequest) {
     if (status) {
       // Map status to Prisma enum format (PascalCase)
       const statusMap: Record<string, string> = {
-        'OPEN': 'Open',
-        'IN_PROGRESS': 'InProgress',
+        OPEN: 'Open',
+        IN_PROGRESS: 'InProgress',
         'IN PROGRESS': 'InProgress',
-        'RESOLVED': 'Resolved',
-        'CLOSED': 'Closed',
-        'ESCALATED': 'Escalated',
+        RESOLVED: 'Resolved',
+        CLOSED: 'Closed',
+        ESCALATED: 'Escalated',
         // Also accept already correct format
-        'Open': 'Open',
-        'InProgress': 'InProgress',
-        'Resolved': 'Resolved',
-        'Closed': 'Closed',
-        'Escalated': 'Escalated',
+        Open: 'Open',
+        InProgress: 'InProgress',
+        Resolved: 'Resolved',
+        Closed: 'Closed',
+        Escalated: 'Escalated',
       }
       const normalizedStatus = status.toUpperCase().replace(/\s+/g, '_')
       where.status = statusMap[normalizedStatus] || statusMap[status] || status
