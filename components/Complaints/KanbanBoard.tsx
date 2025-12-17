@@ -20,8 +20,14 @@ interface Ticket {
   complaint: Complaint;
 }
 
-// Map database status to Kanban column IDs
+// Map database status (Prisma enum: PascalCase) to Kanban column IDs
 const statusToColumn: Record<string, string> = {
+  'Open': 'open',
+  'InProgress': 'inProgress',
+  'Resolved': 'resolved',
+  'Closed': 'closed',
+  'Escalated': 'open',
+  // Also handle old uppercase format for backward compatibility
   'OPEN': 'open',
   'IN_PROGRESS': 'inProgress',
   'RESOLVED': 'resolved',
@@ -29,12 +35,12 @@ const statusToColumn: Record<string, string> = {
   'ESCALATED': 'open',
 };
 
-// Map Kanban column IDs to database status
+// Map Kanban column IDs to database status (Prisma enum: PascalCase)
 const columnToStatus: Record<string, string> = {
-  'open': 'OPEN',
-  'inProgress': 'IN_PROGRESS',
-  'resolved': 'RESOLVED',
-  'closed': 'CLOSED',
+  'open': 'Open',
+  'inProgress': 'InProgress',
+  'resolved': 'Resolved',
+  'closed': 'Closed',
 };
 
 const initialColumns: Record<string, Ticket[]> = {

@@ -63,11 +63,11 @@ export async function POST(
 
     if (confirmed) {
       // User confirms resolution - close the complaint
-      updateData.status = 'CLOSED'
+      updateData.status = 'Closed' // Prisma enum uses PascalCase
       updateData.resolvedAt = new Date()
     } else {
       // User rejects resolution - reopen the complaint
-      updateData.status = 'OPEN'
+      updateData.status = 'Open' // Prisma enum uses PascalCase
       updateData.resolution = feedback || complaint.resolution
     }
 

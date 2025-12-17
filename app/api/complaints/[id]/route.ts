@@ -73,15 +73,41 @@ export async function PUT(
     const oldStatus = currentComplaint.status
 
     if (body.status) {
-      // Normalize status: convert to uppercase and replace spaces with underscores
-      const normalizedStatus = body.status.toUpperCase().replace(/\s+/g, '_')
-      updateData.status = normalizedStatus
+      // Map incoming status to Prisma enum format (PascalCase)
+      // Accepts: OPEN, IN_PROGRESS, RESOLVED, CLOSED, ESCALATED
+      // Or: Open, InProgress, Resolved, Closed, Escalated
+      const statusMap: Record<string, string> = {
+        'OPEN': 'Open',
+        'IN_PROGRESS': 'InProgress',
+        'IN PROGRESS': 'InProgress',
+        'RESOLVED': 'Resolved',
+        'CLOSED': 'Closed',
+        'ESCALATED': 'Escalated',
+        // Also accept already correct format
+        'Open': 'Open',
+        'InProgress': 'InProgress',
+        'Resolved': 'Resolved',
+        'Closed': 'Closed',
+        'Escalated': 'Escalated',
+      }
       
-      // Track response and resolution times based on normalized status
-      if (normalizedStatus === 'IN_PROGRESS' && !currentComplaint.respondedAt) {
+      const normalizedStatus = body.status.toUpperCase().replace(/\s+/g, '_')
+      const prismaStatus = statusMap[normalizedStatus] || statusMap[body.status] || body.status
+      
+      if (!['Open', 'InProgress', 'Resolved', 'Closed', 'Escalated'].includes(prismaStatus)) {
+        return NextResponse.json(
+          { success: false, error: `Invalid status: ${body.status}. Must be one of: Open, InProgress, Resolved, Closed, Escalated` },
+          { status: 400 }
+        )
+      }
+      
+      updateData.status = prismaStatus
+      
+      // Track response and resolution times
+      if (prismaStatus === 'InProgress' && !currentComplaint.respondedAt) {
         updateData.respondedAt = new Date()
       }
-      if ((normalizedStatus === 'RESOLVED' || normalizedStatus === 'CLOSED') && !currentComplaint.resolvedAt) {
+      if ((prismaStatus === 'Resolved' || prismaStatus === 'Closed') && !currentComplaint.resolvedAt) {
         updateData.resolvedAt = new Date()
       }
     }
