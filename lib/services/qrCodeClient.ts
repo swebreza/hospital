@@ -10,10 +10,17 @@
 export function generateQRCodeData(assetId: string): string {
   // Simple encoding: just the asset ID
   // In production, you might want to encode more data or use a short URL
-  const baseUrl =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  let baseUrl: string
+  
+  if (typeof window !== 'undefined') {
+    // Client-side: use current origin (works in both dev and production)
+    baseUrl = window.location.origin
+  } else {
+    // Server-side: use environment variable or fallback
+    // NEXT_PUBLIC_APP_URL should be set in Vercel: https://hospital-sigma-five.vercel.app
+    baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  }
+  
   return `${baseUrl}/qr/${assetId}`
 }
 
