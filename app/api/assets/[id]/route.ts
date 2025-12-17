@@ -92,6 +92,24 @@ export async function PUT(
       )
     }
 
+    // Clean serialNumber before updating (same logic as POST)
+    if (body.serialNumber !== undefined) {
+      const serialStr = String(body.serialNumber).trim()
+      const lowerSerial = serialStr.toLowerCase()
+      
+      if (serialStr === '' || 
+          lowerSerial === 'null' || 
+          lowerSerial === 'undefined' ||
+          lowerSerial === 'none' ||
+          lowerSerial === 'n/a' ||
+          lowerSerial === 'na') {
+        // Remove invalid serialNumber
+        body.serialNumber = undefined
+      } else {
+        body.serialNumber = serialStr
+      }
+    }
+
     // Track changes for history
     const changes: Record<string, { old: unknown; new: unknown }> = {}
     const performedBy = body.performedBy || body.updatedBy

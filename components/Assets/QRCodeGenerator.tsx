@@ -20,13 +20,22 @@ export default function QRCodeGenerator({
   showDownload = true,
 }: QRCodeGeneratorProps) {
   const [qrData, setQrData] = useState<string>('')
+  const [qrSize, setQrSize] = useState(size)
 
   // Generate QR code data only on client-side
   useEffect(() => {
     if (typeof window !== 'undefined' && value) {
       setQrData(generateQRCodeData(value))
+      // Adjust QR size for mobile
+      const updateSize = () => {
+        const maxSize = window.innerWidth < 640 ? Math.min(200, window.innerWidth - 120) : size
+        setQrSize(maxSize)
+      }
+      updateSize()
+      window.addEventListener('resize', updateSize)
+      return () => window.removeEventListener('resize', updateSize)
     }
-  }, [value])
+  }, [value, size])
 
   const downloadQR = () => {
     const svg = document.getElementById('qr-code-svg')
@@ -64,12 +73,12 @@ export default function QRCodeGenerator({
   }
 
   return (
-    <div className='flex flex-col items-center gap-4 p-6 bg-white rounded-lg border border-[var(--border-color)]'>
-      <div className='p-4 bg-white rounded-lg flex items-center justify-center border-2 border-dashed border-[var(--border-color)]'>
+    <div className='flex flex-col items-center gap-3 sm:gap-4 p-4 sm:p-6 bg-white rounded-lg border border-[var(--border-color)] w-full'>
+      <div className='p-3 sm:p-4 bg-white rounded-lg flex items-center justify-center border-2 border-dashed border-[var(--border-color)] w-full max-w-full overflow-hidden'>
         <QRCodeSVG
           id='qr-code-svg'
           value={qrData}
-          size={size}
+          size={qrSize}
           level='H'
           includeMargin={true}
         />

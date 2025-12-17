@@ -242,10 +242,10 @@ export default function KanbanBoard() {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div 
-        className="flex gap-4 sm:gap-6 h-full overflow-x-auto pb-4 px-2 sm:px-0" 
+        className="flex gap-3 sm:gap-6 h-full overflow-x-auto overflow-y-hidden pb-4 px-2 sm:px-0 scrollbar-hide" 
         style={{ 
-          touchAction: 'pan-y',
           WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+          minHeight: 0, // Important for flex scrolling
         }}
       >
         {columnConfig.map(({ id, label, icon: Icon, color }) => {
@@ -253,19 +253,21 @@ export default function KanbanBoard() {
           return (
             <div 
               key={id} 
-              className="flex-1 min-w-[260px] sm:min-w-[300px] bg-gray-100 rounded-xl p-3 sm:p-4 flex flex-col"
-              style={{ touchAction: 'pan-y' }}
+              className="flex-shrink-0 w-[280px] sm:w-auto sm:flex-1 sm:min-w-[300px] bg-gray-100 rounded-xl p-3 sm:p-4 flex flex-col h-full"
+              style={{ 
+                minHeight: 0, // Important for flex scrolling
+              }}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold capitalize text-gray-700 flex items-center gap-2">
-                  <Icon size={18} className={color} />
-                  {label}
-                  <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs ml-2">
+              <div className="flex justify-between items-center mb-3 sm:mb-4 flex-shrink-0">
+                <h3 className="font-bold capitalize text-gray-700 flex items-center gap-1 sm:gap-2 text-xs sm:text-base">
+                  <Icon size={14} className={`${color} sm:w-[18px] sm:h-[18px]`} />
+                  <span className="truncate">{label.length > 8 ? label.substring(0, 8) + '...' : label}</span>
+                  <span className="bg-gray-200 text-gray-600 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs ml-auto sm:ml-2 flex-shrink-0">
                     {tickets.length}
                   </span>
                 </h3>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <MoreHorizontal size={16} />
+                <button className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                  <MoreHorizontal size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
 
@@ -274,10 +276,13 @@ export default function KanbanBoard() {
                   <div
                     {...provided.droppableProps}
                     ref={provided.innerRef}
-                    className={`flex-1 flex flex-col gap-2 sm:gap-3 min-h-[200px] ${
+                    className={`flex-1 flex flex-col gap-2 sm:gap-3 min-h-0 overflow-y-auto scrollbar-thin ${
                       snapshot.isDraggingOver ? 'bg-gray-50 rounded-lg' : ''
                     }`}
-                    style={{ touchAction: 'pan-y' }}
+                    style={{ 
+                      WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+                      minHeight: 0, // Important for flex scrolling
+                    }}
                   >
                     {tickets.length === 0 ? (
                       <div className="flex-1 flex items-center justify-center text-center py-8">

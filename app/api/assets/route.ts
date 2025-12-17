@@ -154,8 +154,8 @@ export async function POST(request: NextRequest) {
     const qrCode = generateQRCodeData(body.id)
 
     // Create asset
-    // Handle serialNumber: clean and validate before saving
-    const assetData: any = {
+    // Handle serialNumber: MULTI-LAYER CLEANING to prevent any null/empty values
+    const assetData: Record<string, unknown> = {
       ...body,
       qrCode,
       status: body.status || 'Active',
@@ -164,17 +164,29 @@ export async function POST(request: NextRequest) {
       replacementRecommended: body.replacementRecommended || false,
     }
     
-    // Clean serialNumber: handle null, undefined, empty string, or "null" string
+    // LAYER 1: Clean serialNumber with comprehensive validation
+    let cleanedSerialNumber: string | undefined = undefined
+    
     if (body.serialNumber !== null && body.serialNumber !== undefined) {
       const serialStr = String(body.serialNumber).trim()
-      if (serialStr !== '' && serialStr.toLowerCase() !== 'null') {
-        assetData.serialNumber = serialStr
-      } else {
-        // Explicitly remove to avoid null/empty duplicates
-        delete assetData.serialNumber
+      const lowerSerial = serialStr.toLowerCase()
+      
+      // Reject: empty, "null", "undefined", whitespace-only
+      if (serialStr !== '' && 
+          lowerSerial !== 'null' && 
+          lowerSerial !== 'undefined' &&
+          lowerSerial !== 'none' &&
+          lowerSerial !== 'n/a' &&
+          lowerSerial !== 'na') {
+        cleanedSerialNumber = serialStr
       }
+    }
+    
+    // LAYER 2: Only include if we have a valid value
+    if (cleanedSerialNumber) {
+      assetData.serialNumber = cleanedSerialNumber
     } else {
-      // Remove if null or undefined
+      // Explicitly remove to prevent any null/empty/undefined values
       delete assetData.serialNumber
     }
     

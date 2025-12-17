@@ -52,7 +52,13 @@ export default function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
     e.preventDefault()
 
     try {
-      const assetData = {
+      // Clean serialNumber: only include if it has a valid value
+      const cleanedSerialNumber = formData.serialNumber?.trim()
+      const serialNumber = cleanedSerialNumber && cleanedSerialNumber !== '' 
+        ? cleanedSerialNumber 
+        : undefined
+
+      const assetData: Record<string, unknown> = {
         ...formData,
         value: Number(formData.value) || 0,
         status: 'Active' as const,
@@ -65,6 +71,14 @@ export default function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
         amcExpiry: formData.amcExpiry || undefined,
         installationDate: formData.installationDate || undefined,
         commissioningDate: formData.commissioningDate || undefined,
+      }
+
+      // Only include serialNumber if it has a value
+      if (serialNumber) {
+        assetData.serialNumber = serialNumber
+      } else {
+        // Explicitly remove to avoid sending null/empty
+        delete assetData.serialNumber
       }
 
       const response = await assetsApi.create(assetData)

@@ -9,6 +9,7 @@ import AssetHistoryTimeline from './AssetHistoryTimeline'
 import { assetsApi } from '@/lib/api/assets'
 import type { AssetHistory } from '@/lib/types'
 import QRCodeGenerator from './QRCodeGenerator'
+import QRCodeScanner from './QRCodeScanner'
 import { toast } from 'sonner'
 import { generateQRCodeData } from '@/lib/services/qrCodeClient'
 
@@ -29,6 +30,7 @@ export default function AssetDrawer({
   const [history, setHistory] = useState<AssetHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [showQRScanner, setShowQRScanner] = useState(false)
   const loadedAssetIdRef = React.useRef<string | null>(null)
 
   // Generate QR code URL client-side only (after mount)
@@ -110,8 +112,9 @@ export default function AssetDrawer({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className='fixed right-0 top-0 h-full bg-white shadow-2xl z-[1050] flex flex-col w-full sm:w-[500px]'
+            className='fixed right-0 top-0 h-full bg-white shadow-2xl z-[1050] flex flex-col w-full sm:w-[500px] max-h-screen'
             onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '100vh' }}
           >
             {/* Header */}
             <div className='p-6 border-b border-border flex justify-between items-start bg-bg-secondary'>
@@ -132,32 +135,43 @@ export default function AssetDrawer({
             </div>
 
             {/* Tabs */}
-            <div className='flex border-b border-border px-6'>
-              {[
-                { id: 'info', label: 'Information', icon: FileText },
-                { id: 'history', label: 'History', icon: Clock },
-                { id: 'docs', label: 'Documents', icon: File },
-                { id: 'qr', label: 'QR Code', icon: QrCode },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() =>
-                    setActiveTab(tab.id as 'info' | 'history' | 'docs' | 'qr')
-                  }
-                  className={`flex items-center gap-2 py-4 px-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <tab.icon size={16} />
-                  {tab.label}
-                </button>
-              ))}
+            <div
+              className='flex border-b border-border overflow-x-auto scrollbar-hide'
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              <div className='flex min-w-full sm:min-w-0'>
+                {[
+                  { id: 'info', label: 'Information', icon: FileText },
+                  { id: 'history', label: 'History', icon: Clock },
+                  { id: 'docs', label: 'Documents', icon: File },
+                  { id: 'qr', label: 'QR Code', icon: QrCode },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() =>
+                      setActiveTab(tab.id as 'info' | 'history' | 'docs' | 'qr')
+                    }
+                    className={`flex items-center gap-1 sm:gap-2 py-4 px-2 sm:px-4 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                      activeTab === tab.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <tab.icon size={14} className='sm:w-4 sm:h-4' />
+                    <span className='hidden xs:inline'>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Content */}
-            <div className='flex-1 overflow-y-auto p-6 scrollbar-thin'>
+            <div
+              className='flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin'
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                minHeight: 0, // Important for flex scrolling
+              }}
+            >
               {activeTab === 'info' && (
                 <div className='space-y-6'>
                   <div className='grid grid-cols-2 gap-4'>
@@ -249,71 +263,116 @@ export default function AssetDrawer({
               )}
 
               {activeTab === 'qr' && (
-                <div className='space-y-4'>
-                  {qrCodeUrl ? (
-                    <div className='flex flex-col items-center'>
-                      <QRCodeGenerator
-                        value={asset.id}
-                        assetName={asset.name}
-                        size={250}
-                        showDownload={true}
-                      />
-                      <div className='mt-4 p-3 bg-bg-secondary rounded-lg w-full'>
-                        <label className='text-xs text-text-secondary font-medium mb-1 block'>
-                          QR Code URL
-                        </label>
-                        <div className='flex items-center gap-2'>
-                          <input
-                            type='text'
-                            value={qrCodeUrl}
-                            readOnly
-                            className='flex-1 p-2 text-sm border border-border rounded-md bg-white font-mono text-xs'
-                          />
+                <div className='space-y-4 pb-4'>
+                  {/* QR Code Generator Section */}
+                  <div className='space-y-4'>
+                    <h3 className='text-sm font-semibold text-text-primary mb-3'>
+                      Asset QR Code
+                    </h3>
+                    {qrCodeUrl ? (
+                      <div className='flex flex-col items-center'>
+                        <QRCodeGenerator
+                          value={asset.id}
+                          assetName={asset.name}
+                          size={250}
+                          showDownload={true}
+                        />
+                        <div className='mt-4 p-3 bg-bg-secondary rounded-lg w-full'>
+                          <label className='text-xs text-text-secondary font-medium mb-1 block'>
+                            QR Code URL
+                          </label>
+                          <div className='flex items-center gap-2'>
+                            <input
+                              type='text'
+                              value={qrCodeUrl}
+                              readOnly
+                              className='flex-1 p-2 text-xs border border-border rounded-md bg-white font-mono truncate'
+                            />
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              onClick={() => {
+                                navigator.clipboard.writeText(qrCodeUrl)
+                                toast.success('QR code URL copied!')
+                              }}
+                            >
+                              Copy
+                            </Button>
+                          </div>
+                        </div>
+                        <div className='mt-4 text-center w-full'>
+                          <p className='text-xs sm:text-sm text-text-secondary mb-2'>
+                            Scan this QR code to view asset details
+                          </p>
                           <Button
                             variant='outline'
                             size='sm'
+                            className='w-full sm:w-auto'
                             onClick={() => {
-                              navigator.clipboard.writeText(qrCodeUrl)
-                              toast.success('QR code URL copied!')
+                              window.open(qrCodeUrl, '_blank')
                             }}
                           >
-                            Copy
+                            Open QR Page
                           </Button>
                         </div>
                       </div>
-                      <div className='mt-4 text-center'>
-                        <p className='text-sm text-text-secondary mb-2'>
-                          Scan this QR code to view asset details
+                    ) : (
+                      <div className='text-center py-8'>
+                        <p className='text-text-secondary mb-4'>
+                          QR code not available for this asset
                         </p>
-                        <Button
-                          variant='outline'
-                          onClick={() => {
-                            window.open(qrCodeUrl, '_blank')
-                          }}
-                        >
-                          Open QR Page
-                        </Button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className='text-center py-8'>
-                      <p className='text-text-secondary mb-4'>
-                        QR code not available for this asset
-                      </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
+                  {/* QR Scanner Section */}
+                  <div className='space-y-4 pt-4 border-t border-border'>
+                    <h3 className='text-sm font-semibold text-text-primary mb-3'>
+                      Scan QR Code
+                    </h3>
+                    <p className='text-xs sm:text-sm text-text-secondary mb-4'>
+                      Scan a QR code to view another asset&apos;s details
+                    </p>
+                    <Button
+                      variant='primary'
+                      className='w-full'
+                      onClick={() => setShowQRScanner(true)}
+                    >
+                      <QrCode size={18} className='mr-2' />
+                      Open QR Scanner
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className='p-4 border-t border-border bg-bg-secondary flex justify-end gap-3'>
-              <Button variant='outline' onClick={onClose}>
+            <div className='p-3 sm:p-4 border-t border-border bg-bg-secondary flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 flex-shrink-0'>
+              <Button
+                variant='outline'
+                onClick={onClose}
+                className='w-full sm:w-auto'
+              >
                 Close
               </Button>
-              <Button variant='primary'>Edit Asset</Button>
+              <Button variant='primary' className='w-full sm:w-auto'>
+                Edit Asset
+              </Button>
             </div>
           </motion.div>
+
+          {/* QR Scanner Modal */}
+          {showQRScanner && (
+            <QRCodeScanner
+              onScan={(scannedAssetId) => {
+                setShowQRScanner(false)
+                toast.success(`Scanned asset: ${scannedAssetId}`)
+                // Optionally navigate to the scanned asset or show its details
+                // You can add navigation logic here if needed
+              }}
+              onClose={() => setShowQRScanner(false)}
+            />
+          )}
         </>
       )}
     </AnimatePresence>

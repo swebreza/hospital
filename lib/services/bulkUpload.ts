@@ -133,8 +133,21 @@ export function validateAssetData(data: Record<string, unknown>): {
     normalized.manufacturer = data.manufacturer.trim()
   }
 
+  // Clean serialNumber: only include if it has a valid value
   if (data.serialNumber && typeof data.serialNumber === 'string') {
-    normalized.serialNumber = data.serialNumber.trim()
+    const cleaned = data.serialNumber.trim()
+    const lowerCleaned = cleaned.toLowerCase()
+    
+    // Only include if it's not empty and not a placeholder value
+    if (cleaned !== '' && 
+        lowerCleaned !== 'null' && 
+        lowerCleaned !== 'undefined' &&
+        lowerCleaned !== 'none' &&
+        lowerCleaned !== 'n/a' &&
+        lowerCleaned !== 'na') {
+      normalized.serialNumber = cleaned
+    }
+    // If invalid, don't include it (will be undefined, which is fine)
   }
 
   if (data.location && typeof data.location === 'string') {
@@ -373,7 +386,7 @@ export async function bulkUploadAssets(
     
     // Convert normalized data to Mongoose document format
     const assetsToSave = batch.map((item) => {
-      const assetData: any = { ...item.data }
+      const assetData: Record<string, unknown> = { ...item.data }
       
       // Convert date strings to Date objects for Mongoose
       if (assetData.purchaseDate && typeof assetData.purchaseDate === 'string') {
@@ -398,6 +411,23 @@ export async function bulkUploadAssets(
       }
       if (!assetData.status) {
         assetData.status = 'Active'
+      }
+      
+      // FINAL CLEANUP: Remove serialNumber if it's invalid
+      if (assetData.serialNumber !== undefined) {
+        const serialStr = String(assetData.serialNumber).trim()
+        const lowerSerial = serialStr.toLowerCase()
+        
+        if (serialStr === '' || 
+            lowerSerial === 'null' || 
+            lowerSerial === 'undefined' ||
+            lowerSerial === 'none' ||
+            lowerSerial === 'n/a' ||
+            lowerSerial === 'na') {
+          delete assetData.serialNumber
+        } else {
+          assetData.serialNumber = serialStr
+        }
       }
       
       return assetData

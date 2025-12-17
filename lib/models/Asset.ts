@@ -199,18 +199,29 @@ AssetSchema.index({ isMinorAsset: 1, department: 1 })
 AssetSchema.index({ replacementRecommended: 1, criticality: 1 })
 
 // Pre-save hook to calculate age and clean serialNumber
+// This is the FINAL layer of defense - cleans serialNumber before saving to database
 AssetSchema.pre('save', function (next: (error?: Error) => void) {
-  // Clean serialNumber: remove if null, empty, or the string "null"
-  if (this.serialNumber === null || this.serialNumber === undefined || 
-      this.serialNumber === '' || String(this.serialNumber).toLowerCase() === 'null') {
-    this.serialNumber = undefined
-  } else if (typeof this.serialNumber === 'string') {
-    // Trim whitespace
-    this.serialNumber = this.serialNumber.trim()
-    // Remove if empty after trim
-    if (this.serialNumber === '') {
+  // COMPREHENSIVE serialNumber cleaning - catch all edge cases
+  if (this.serialNumber !== null && this.serialNumber !== undefined) {
+    const serialStr = String(this.serialNumber).trim()
+    const lowerSerial = serialStr.toLowerCase()
+    
+    // Remove if empty or any placeholder value
+    if (serialStr === '' || 
+        lowerSerial === 'null' || 
+        lowerSerial === 'undefined' ||
+        lowerSerial === 'none' ||
+        lowerSerial === 'n/a' ||
+        lowerSerial === 'na' ||
+        lowerSerial === 'nil') {
       this.serialNumber = undefined
+    } else {
+      // Keep valid serial number (trimmed)
+      this.serialNumber = serialStr
     }
+  } else {
+    // Explicitly set to undefined if null/undefined
+    this.serialNumber = undefined
   }
   
   // Calculate age
