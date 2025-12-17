@@ -14,8 +14,6 @@ export async function GET(
     const complaint = await prisma.complaint.findUnique({
       where: { id },
       include: {
-        reporter: true,
-        assignee: true,
         workOrders: true,
       },
     })
@@ -62,10 +60,6 @@ export async function PUT(
     // Get current complaint to check reporter
     const currentComplaint = await prisma.complaint.findUnique({
       where: { id },
-      include: {
-        reporter: true,
-        assignee: true,
-      },
     })
 
     if (!currentComplaint) {
@@ -148,10 +142,6 @@ export async function PUT(
     const complaint = await prisma.complaint.update({
       where: { id },
       data: updateData,
-      include: {
-        reporter: true,
-        assignee: true,
-      },
     })
 
     // Enrich with asset data from Mongoose

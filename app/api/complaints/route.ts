@@ -45,22 +45,6 @@ export async function GET(request: NextRequest) {
     const [complaints, total] = await Promise.all([
       prisma.complaint.findMany({
         where,
-        include: {
-          reporter: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
         orderBy: { reportedAt: 'desc' },
         skip,
         take: limit,
@@ -69,7 +53,9 @@ export async function GET(request: NextRequest) {
     ])
 
     // Enrich complaints with asset data from Mongoose
-    const { enrichComplaintsWithAssets } = await import('@/lib/services/complaintAssetHelper')
+    const { enrichComplaintsWithAssets } = await import(
+      '@/lib/services/complaintAssetHelper'
+    )
     const enrichedComplaints = await enrichComplaintsWithAssets(complaints)
 
     const response: PaginatedResponse<Complaint> = {
@@ -124,13 +110,13 @@ export async function POST(request: NextRequest) {
       // Find a full access user to assign
       const { clerkClient } = await import('@clerk/nextjs/server')
       const client = await clerkClient()
-      
+
       // Get all users and filter for full_access role
       const users = await client.users.getUserList({ limit: 100 })
       const fullAccessUsers = users.data.filter(
         (user) => user.publicMetadata?.role === 'full_access'
       )
-      
+
       if (fullAccessUsers.length > 0) {
         // Assign to first available full access user (round-robin could be implemented)
         assignedTo = fullAccessUsers[0].id
@@ -154,7 +140,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create complaint without including asset (asset is in Mongoose, not Prisma)
+    // Create complaint - NO includes because reporter/assignee are Clerk users, not Prisma users
     const complaint = await prisma.complaint.create({
       data: {
         id: body.id || `COMP-${Date.now()}`,
@@ -166,22 +152,6 @@ export async function POST(request: NextRequest) {
         reportedBy,
         assignedTo,
         slaDeadline,
-      },
-      include: {
-        reporter: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
       },
     })
 
@@ -212,8 +182,21 @@ export async function POST(request: NextRequest) {
 
     // Send notification to assigned full access user
     if (assignedTo && role === 'normal') {
-      const { notificationService } = await import('@/lib/services/notificationService')
+      const { notificationService } = await import(
+        '@/lib/services/notificationService'
+      )
       try {
+        // Get assignee email from Clerk (not Prisma - assignee relation doesn't exist)
+        let assigneeEmail: string | undefined
+        try {
+          const { clerkClient } = await import('@clerk/nextjs/server')
+          const client = await clerkClient()
+          const assignee = await client.users.getUser(assignedTo)
+          assigneeEmail = assignee.emailAddresses[0]?.emailAddress
+        } catch (clerkError) {
+          console.error('Error fetching assignee from Clerk:', clerkError)
+        }
+
         await notificationService.notifyComplaintAssigned(
           assignedTo,
           {
@@ -224,7 +207,7 @@ export async function POST(request: NextRequest) {
           },
           {
             sendEmail: true,
-            email: (complaint.assignee as any)?.email,
+            email: assigneeEmail,
           }
         )
       } catch (notifError) {
@@ -248,6 +231,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
-
-

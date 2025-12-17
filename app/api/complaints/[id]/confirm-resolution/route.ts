@@ -34,10 +34,6 @@ export async function POST(
     // Get complaint
     const complaint = await prisma.complaint.findUnique({
       where: { id },
-      include: {
-        reporter: true,
-        assignee: true,
-      },
     })
 
     if (!complaint) {
@@ -79,10 +75,6 @@ export async function POST(
     const updatedComplaint = await prisma.complaint.update({
       where: { id },
       data: updateData,
-      include: {
-        reporter: true,
-        assignee: true,
-      },
     })
 
     // Enrich with asset data from Mongoose
