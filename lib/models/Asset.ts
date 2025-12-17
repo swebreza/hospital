@@ -74,11 +74,11 @@ const AssetSchema = new Schema<IAsset>(
     serialNumber: {
       type: String,
       // No default - field should be completely omitted if not provided
-      sparse: true,
+      sparse: true, // Field is optional
       index: {
         unique: true,
-        sparse: true,
-        partialFilterExpression: { serialNumber: { $exists: true, $ne: null, $ne: '' } },
+        sparse: true, // Only index documents where serialNumber exists and is not null
+        name: 'assets_serial_number_key',
       },
     },
     department: {

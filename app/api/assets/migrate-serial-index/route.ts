@@ -50,26 +50,36 @@ export async function POST(request: NextRequest) {
       errors: [] as string[],
     }
 
-    // Step 1: Drop existing index
-    try {
-      await collection.dropIndex('assets_serial_number_key')
-      results.indexDropped = true
-    } catch (err: any) {
-      if (err.code === 27 || err.codeName === 'IndexNotFound') {
-        // Index doesn't exist, that's okay
+    // Step 1: Drop existing index (try all possible names)
+    const indexNamesToTry = ['assets_serial_number_key', 'serialNumber_1', 'serialNumber_-1']
+    let droppedAny = false
+    
+    for (const indexName of indexNamesToTry) {
+      try {
+        await collection.dropIndex(indexName)
         results.indexDropped = true
-      } else {
-        // Try dropping by key pattern
-        try {
-          await collection.dropIndex({ serialNumber: 1 })
-          results.indexDropped = true
-        } catch (err2: any) {
-          if (err2.code === 27 || err2.codeName === 'IndexNotFound') {
-            results.indexDropped = true
-          } else {
-            results.errors.push(`Failed to drop index: ${err2.message}`)
-            throw err2
-          }
+        droppedAny = true
+        break
+      } catch (err: any) {
+        if (err.code === 27 || err.codeName === 'IndexNotFound') {
+          continue
+        } else {
+          results.errors.push(`Failed to drop index ${indexName}: ${err.message}`)
+        }
+      }
+    }
+    
+    // Also try dropping by key pattern
+    if (!droppedAny) {
+      try {
+        await collection.dropIndex({ serialNumber: 1 })
+        results.indexDropped = true
+      } catch (err: any) {
+        if (err.code === 27 || err.codeName === 'IndexNotFound') {
+          results.indexDropped = true // No index to drop is okay
+        } else {
+          results.errors.push(`Failed to drop index by pattern: ${err.message}`)
+          throw err
         }
       }
     }
@@ -96,15 +106,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Recreate index
+    // Use sparse index - simpler and works reliably
     try {
       await collection.createIndex(
         { serialNumber: 1 },
         {
           unique: true,
-          sparse: true,
-          partialFilterExpression: {
-            serialNumber: { $exists: true, $ne: null, $ne: '' },
-          },
+          sparse: true, // Only index documents where serialNumber exists and is not null
           name: 'assets_serial_number_key',
         }
       )

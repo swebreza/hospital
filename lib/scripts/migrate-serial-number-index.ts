@@ -55,25 +55,37 @@ async function migrateSerialNumberIndex() {
       console.log('   No serialNumber index found')
     }
 
-    // Step 2: Drop existing index
-    console.log('\n🗑️  Step 2: Dropping existing serialNumber index...')
-    try {
-      await collection.dropIndex('assets_serial_number_key')
-      console.log('   ✅ Dropped index: assets_serial_number_key')
-    } catch (err: any) {
-      if (err.code === 27 || err.codeName === 'IndexNotFound') {
-        console.log('   ℹ️  Index does not exist (already dropped or never created)')
-      } else {
-        // Try dropping by key pattern
-        try {
-          await collection.dropIndex({ serialNumber: 1 })
-          console.log('   ✅ Dropped index by key pattern')
-        } catch (err2: any) {
-          if (err2.code === 27 || err2.codeName === 'IndexNotFound') {
-            console.log('   ℹ️  Index does not exist')
-          } else {
-            throw err2
-          }
+    // Step 2: Drop existing index (try all possible names)
+    console.log('\n🗑️  Step 2: Dropping existing serialNumber indexes...')
+    const indexNamesToTry = ['assets_serial_number_key', 'serialNumber_1', 'serialNumber_-1']
+    let droppedAny = false
+    
+    for (const indexName of indexNamesToTry) {
+      try {
+        await collection.dropIndex(indexName)
+        console.log(`   ✅ Dropped index: ${indexName}`)
+        droppedAny = true
+      } catch (err: any) {
+        if (err.code === 27 || err.codeName === 'IndexNotFound') {
+          // Index doesn't exist with this name, try next
+          continue
+        } else {
+          throw err
+        }
+      }
+    }
+    
+    // Also try dropping by key pattern
+    if (!droppedAny) {
+      try {
+        await collection.dropIndex({ serialNumber: 1 })
+        console.log('   ✅ Dropped index by key pattern')
+        droppedAny = true
+      } catch (err: any) {
+        if (err.code === 27 || err.codeName === 'IndexNotFound') {
+          console.log('   ℹ️  No serialNumber index found to drop')
+        } else {
+          throw err
         }
       }
     }
@@ -81,35 +93,47 @@ async function migrateSerialNumberIndex() {
     // Step 3: Clean existing bad data
     console.log('\n🧹 Step 3: Cleaning existing assets with invalid serialNumber values...')
     
-    // Find all assets with problematic serialNumber values
-    const problematicQuery = {
-      $or: [
-        { serialNumber: null },
-        { serialNumber: 'null' },
-        { serialNumber: '' },
-        { serialNumber: { $exists: false } },
-      ],
+    // Clean each problematic value type separately for better reporting
+    const problematicQueries = [
+      { serialNumber: null },
+      { serialNumber: '' },
+      { serialNumber: 'null' },
+      { serialNumber: 'undefined' },
+      { serialNumber: 'none' },
+      { serialNumber: 'n/a' },
+      { serialNumber: 'na' },
+    ]
+
+    let totalCleaned = 0
+    let totalMatched = 0
+
+    for (const query of problematicQueries) {
+      const count = await collection.countDocuments(query)
+      if (count > 0) {
+        const updateResult = await collection.updateMany(
+          query,
+          {
+            $unset: { serialNumber: '' },
+          }
+        )
+        totalCleaned += updateResult.modifiedCount
+        totalMatched += updateResult.matchedCount
+        if (updateResult.modifiedCount > 0) {
+          console.log(`   ✅ Cleaned ${updateResult.modifiedCount} assets with serialNumber: ${JSON.stringify(query.serialNumber)}`)
+        }
+      }
     }
 
-    const problematicCount = await collection.countDocuments(problematicQuery)
-    console.log(`   Found ${problematicCount} assets with problematic serialNumber values`)
-
-    if (problematicCount > 0) {
-      // Remove serialNumber field from these assets
-      const updateResult = await collection.updateMany(
-        problematicQuery,
-        {
-          $unset: { serialNumber: '' },
-        }
-      )
-
-      console.log(`   ✅ Cleaned ${updateResult.modifiedCount} assets`)
-      console.log(`   📝 Matched ${updateResult.matchedCount} assets`)
+    if (totalCleaned > 0) {
+      console.log(`   ✅ Total cleaned: ${totalCleaned} assets`)
+      console.log(`   📝 Total matched: ${totalMatched} assets`)
     } else {
       console.log('   ✅ No assets need cleaning')
     }
 
     // Step 4: Recreate index with proper configuration
+    // Use sparse index - it only indexes documents where serialNumber exists and is not null
+    // This is simpler and works reliably
     console.log('\n🔨 Step 4: Recreating index with proper configuration...')
     
     try {
@@ -117,10 +141,7 @@ async function migrateSerialNumberIndex() {
         { serialNumber: 1 },
         {
           unique: true,
-          sparse: true,
-          partialFilterExpression: {
-            serialNumber: { $exists: true, $ne: null, $ne: '' },
-          },
+          sparse: true, // Only index documents where serialNumber exists and is not null
           name: 'assets_serial_number_key',
         }
       )
@@ -174,7 +195,7 @@ async function migrateSerialNumberIndex() {
     console.log('\n✅ Migration completed successfully!')
     console.log('\n📋 Summary:')
     console.log(`   - Index dropped and recreated`)
-    console.log(`   - ${problematicCount} assets cleaned`)
+    console.log(`   - ${totalCleaned} assets cleaned`)
     console.log(`   - Index now only contains valid serialNumber values`)
     console.log(`   - You can now create assets without serialNumber without errors`)
 
