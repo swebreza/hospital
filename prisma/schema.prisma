@@ -175,8 +175,8 @@ model User {
   // Relations
   createdAssets          Asset[]                    @relation("AssetCreator")
   assignedPMs            PreventiveMaintenance[]    @relation("PMTechnician")
-  reportedComplaints     Complaint[]                 @relation("ComplaintReporter")
-  assignedComplaints     Complaint[]                 @relation("ComplaintAssignee")
+  // NOTE: Complaints are stored in Prisma but reference users only by ID (reportedBy / assignedTo)
+  // and users live in Clerk. We don't maintain Prisma relations here to avoid inconsistent data.
   correctiveMaintenances CorrectiveMaintenance[]
   notifications          Notification[]
   approvals              Approval[]
@@ -221,7 +221,6 @@ model Asset {
   creator                  User?                    @relation("AssetCreator", fields: [createdBy], references: [id])
   preventiveMaintenances   PreventiveMaintenance[]
   calibrations             Calibration[]
-  complaints               Complaint[]
   correctiveMaintenances   CorrectiveMaintenance[]
   workOrders               WorkOrder[]
 
