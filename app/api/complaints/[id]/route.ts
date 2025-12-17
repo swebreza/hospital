@@ -14,7 +14,6 @@ export async function GET(
     const complaint = await prisma.complaint.findUnique({
       where: { id },
       include: {
-        asset: true,
         reporter: true,
         assignee: true,
         workOrders: true,
@@ -28,9 +27,13 @@ export async function GET(
       )
     }
 
+    // Enrich with asset data from Mongoose
+    const { enrichComplaintWithAsset } = await import('@/lib/services/complaintAssetHelper')
+    const enrichedComplaint = await enrichComplaintWithAsset(complaint)
+
     return NextResponse.json({
       success: true,
-      data: complaint,
+      data: enrichedComplaint,
     })
   } catch (error: any) {
     console.error('Error fetching complaint:', error)
@@ -60,7 +63,6 @@ export async function PUT(
     const currentComplaint = await prisma.complaint.findUnique({
       where: { id },
       include: {
-        asset: true,
         reporter: true,
         assignee: true,
       },
@@ -98,11 +100,27 @@ export async function PUT(
         const assignee = await client.users.getUser(body.assignedTo)
 
         if (assignee) {
+          // Fetch asset name from Mongoose
+          let assetName = 'Unknown Asset'
+          if (currentComplaint.assetId) {
+            try {
+              const { default: connectDB } = await import('@/lib/db/mongodb')
+              const { default: Asset } = await import('@/lib/models/Asset')
+              await connectDB()
+              const asset = await Asset.findOne({ id: currentComplaint.assetId }).lean()
+              if (asset) {
+                assetName = asset.name
+              }
+            } catch (assetError) {
+              console.error('Error fetching asset for notification:', assetError)
+            }
+          }
+
           await notificationService.notifyComplaintAssigned(
             body.assignedTo,
             {
               complaintId: id,
-              assetName: (currentComplaint.asset as any)?.name || 'Unknown Asset',
+              assetName,
               priority: currentComplaint.priority,
               title: currentComplaint.title,
             },
@@ -131,11 +149,14 @@ export async function PUT(
       where: { id },
       data: updateData,
       include: {
-        asset: true,
         reporter: true,
         assignee: true,
       },
     })
+
+    // Enrich with asset data from Mongoose
+    const { enrichComplaintWithAsset } = await import('@/lib/services/complaintAssetHelper')
+    const enrichedComplaint = await enrichComplaintWithAsset(complaint)
 
     // Notify reporter (normal user) if status changed
     if (body.status && body.status !== oldStatus && currentComplaint.reportedBy) {
@@ -160,7 +181,7 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      data: complaint,
+      data: enrichedComplaint,
     })
   } catch (error: any) {
     console.error('Error updating complaint:', error)

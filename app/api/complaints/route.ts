@@ -46,7 +46,6 @@ export async function GET(request: NextRequest) {
       prisma.complaint.findMany({
         where,
         include: {
-          asset: true,
           reporter: {
             select: {
               id: true,
@@ -69,8 +68,12 @@ export async function GET(request: NextRequest) {
       prisma.complaint.count({ where }),
     ])
 
+    // Enrich complaints with asset data from Mongoose
+    const { enrichComplaintsWithAssets } = await import('@/lib/services/complaintAssetHelper')
+    const enrichedComplaints = await enrichComplaintsWithAssets(complaints)
+
     const response: PaginatedResponse<Complaint> = {
-      data: complaints as any,
+      data: enrichedComplaints as any,
       pagination: {
         page,
         limit,
@@ -137,6 +140,21 @@ export async function POST(request: NextRequest) {
     // Set reportedBy to current user if not provided
     const reportedBy = body.reportedBy || userId
 
+    // Verify asset exists (assets are stored via Mongoose, not Prisma)
+    if (body.assetId) {
+      const { default: connectDB } = await import('@/lib/db/mongodb')
+      const { default: Asset } = await import('@/lib/models/Asset')
+      await connectDB()
+      const asset = await Asset.findOne({ id: body.assetId }).lean()
+      if (!asset) {
+        return NextResponse.json(
+          { success: false, error: `Asset with ID ${body.assetId} not found` },
+          { status: 404 }
+        )
+      }
+    }
+
+    // Create complaint without including asset (asset is in Mongoose, not Prisma)
     const complaint = await prisma.complaint.create({
       data: {
         id: body.id || `COMP-${Date.now()}`,
@@ -150,11 +168,47 @@ export async function POST(request: NextRequest) {
         slaDeadline,
       },
       include: {
-        asset: true,
-        reporter: true,
-        assignee: true,
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     })
+
+    // Fetch asset separately from Mongoose if needed
+    let assetData = null
+    if (body.assetId) {
+      try {
+        const { default: connectDB } = await import('@/lib/db/mongodb')
+        const { default: Asset } = await import('@/lib/models/Asset')
+        await connectDB()
+        const asset = await Asset.findOne({ id: body.assetId }).lean()
+        if (asset) {
+          assetData = {
+            id: asset.id,
+            name: asset.name,
+            model: asset.model,
+            manufacturer: asset.manufacturer,
+            department: asset.department,
+            location: asset.location,
+            status: asset.status,
+          }
+        }
+      } catch (assetError) {
+        console.error('Error fetching asset:', assetError)
+        // Don't fail the request if asset fetch fails
+      }
+    }
 
     // Send notification to assigned full access user
     if (assignedTo && role === 'normal') {
@@ -164,7 +218,7 @@ export async function POST(request: NextRequest) {
           assignedTo,
           {
             complaintId: complaint.id,
-            assetName: (complaint.asset as any)?.name || 'Unknown Asset',
+            assetName: assetData?.name || 'Unknown Asset',
             priority: complaint.priority,
             title: complaint.title,
           },
@@ -181,7 +235,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: complaint,
+      data: {
+        ...complaint,
+        asset: assetData, // Include asset data from Mongoose
+      },
     })
   } catch (error: any) {
     console.error('Error creating complaint:', error)

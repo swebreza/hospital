@@ -35,7 +35,6 @@ export async function POST(
     const complaint = await prisma.complaint.findUnique({
       where: { id },
       include: {
-        asset: true,
         reporter: true,
         assignee: true,
       },
@@ -81,11 +80,14 @@ export async function POST(
       where: { id },
       data: updateData,
       include: {
-        asset: true,
         reporter: true,
         assignee: true,
       },
     })
+
+    // Enrich with asset data from Mongoose
+    const { enrichComplaintWithAsset } = await import('@/lib/services/complaintAssetHelper')
+    const enrichedComplaint = await enrichComplaintWithAsset(updatedComplaint)
 
     // Notify full access user (assignee) about confirmation/rejection
     if (complaint.assignedTo) {
@@ -113,7 +115,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      data: updatedComplaint,
+      data: enrichedComplaint,
       message: confirmed
         ? 'Complaint confirmed as resolved and closed'
         : 'Complaint reopened for further action',
