@@ -67,6 +67,13 @@ const KanbanBoard = React.forwardRef<{ refresh?: () => void }, {}>(
   (props, ref) => {
     const { user } = useUser()
     const userRole = useClientUserRole()
+
+    // Debug: Log user role for troubleshooting
+    React.useEffect(() => {
+      if (userRole) {
+        console.log('User role loaded:', userRole)
+      }
+    }, [userRole])
     const [columns, setColumns] =
       useState<Record<string, Ticket[]>>(initialColumns)
     const [loading, setLoading] = useState(true)
@@ -337,6 +344,8 @@ const KanbanBoard = React.forwardRef<{ refresh?: () => void }, {}>(
                       style={{
                         WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
                         minHeight: 0, // Important for flex scrolling
+                        touchAction:
+                          userRole === 'full_access' ? 'pan-y' : 'auto', // Allow vertical scroll, enable drag for full_access
                       }}
                     >
                       {tickets.length === 0 ? (
@@ -350,8 +359,8 @@ const KanbanBoard = React.forwardRef<{ refresh?: () => void }, {}>(
                             draggableId={ticket.id}
                             index={index}
                             isDragDisabled={
-                              userRole !== 'full_access' ||
-                              updatingId === ticket.id
+                              updatingId === ticket.id ||
+                              userRole !== 'full_access' // Disable if not full_access (null or 'normal')
                             }
                           >
                             {(provided, snapshot) => (
@@ -361,9 +370,16 @@ const KanbanBoard = React.forwardRef<{ refresh?: () => void }, {}>(
                                 {...provided.dragHandleProps}
                                 style={{
                                   ...provided.draggableProps.style,
-                                  touchAction: 'none', // Enable touch dragging
+                                  touchAction:
+                                    userRole === 'full_access'
+                                      ? 'none'
+                                      : 'auto', // Enable touch dragging only for full_access
                                 }}
-                                className={`bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing ${
+                                className={`bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
+                                  userRole === 'full_access'
+                                    ? 'cursor-grab active:cursor-grabbing'
+                                    : 'cursor-pointer'
+                                } ${
                                   snapshot.isDragging
                                     ? 'shadow-lg ring-2 ring-primary rotate-2'
                                     : ''
