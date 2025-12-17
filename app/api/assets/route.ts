@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
     const qrCode = generateQRCodeData(body.id)
 
     // Create asset
-    // Handle serialNumber: only set if provided and not empty
+    // Handle serialNumber: clean and validate before saving
     const assetData: any = {
       ...body,
       qrCode,
@@ -164,11 +164,17 @@ export async function POST(request: NextRequest) {
       replacementRecommended: body.replacementRecommended || false,
     }
     
-    // Only include serialNumber if it has a value (to avoid null duplicates)
-    if (body.serialNumber && body.serialNumber.trim() !== '') {
-      assetData.serialNumber = body.serialNumber.trim()
+    // Clean serialNumber: handle null, undefined, empty string, or "null" string
+    if (body.serialNumber !== null && body.serialNumber !== undefined) {
+      const serialStr = String(body.serialNumber).trim()
+      if (serialStr !== '' && serialStr.toLowerCase() !== 'null') {
+        assetData.serialNumber = serialStr
+      } else {
+        // Explicitly remove to avoid null/empty duplicates
+        delete assetData.serialNumber
+      }
     } else {
-      // Explicitly set to undefined to exclude from document
+      // Remove if null or undefined
       delete assetData.serialNumber
     }
     
@@ -197,6 +203,18 @@ export async function POST(request: NextRequest) {
     if (err.code === 11000) {
       const duplicateField = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'field'
       const duplicateValue = err.keyValue ? Object.values(err.keyValue)[0] : 'value'
+      
+      // Special handling for serialNumber null duplicates
+      if (duplicateField === 'serialNumber' && (duplicateValue === null || duplicateValue === 'null')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Serial number cannot be empty. Please provide a unique serial number or leave it blank (it will be optional).' 
+          },
+          { status: 409 } // Conflict
+        )
+      }
+      
       return NextResponse.json(
         { 
           success: false, 

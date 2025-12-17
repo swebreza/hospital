@@ -198,13 +198,28 @@ AssetSchema.index({ criticality: 1, lifecycleState: 1 })
 AssetSchema.index({ isMinorAsset: 1, department: 1 })
 AssetSchema.index({ replacementRecommended: 1, criticality: 1 })
 
-// Pre-save hook to calculate age
+// Pre-save hook to calculate age and clean serialNumber
 AssetSchema.pre('save', function (next: (error?: Error) => void) {
+  // Clean serialNumber: remove if null, empty, or the string "null"
+  if (this.serialNumber === null || this.serialNumber === undefined || 
+      this.serialNumber === '' || String(this.serialNumber).toLowerCase() === 'null') {
+    this.serialNumber = undefined
+  } else if (typeof this.serialNumber === 'string') {
+    // Trim whitespace
+    this.serialNumber = this.serialNumber.trim()
+    // Remove if empty after trim
+    if (this.serialNumber === '') {
+      this.serialNumber = undefined
+    }
+  }
+  
+  // Calculate age
   if (this.purchaseDate) {
     const ageInMs = Date.now() - new Date(this.purchaseDate).getTime()
     this.ageYears =
       Math.round((ageInMs / (1000 * 60 * 60 * 24 * 365)) * 100) / 100
   }
+  
   if (typeof next === 'function') {
     next()
   }
