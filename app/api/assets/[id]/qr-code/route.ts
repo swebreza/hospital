@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db/mongodb'
 import Asset from '@/lib/models/Asset'
-import { generateQRCodeData } from '@/lib/services/qrCode'
+import { generateQRCodeData } from '@/lib/services/qrCodeClient'
 import { requireRole } from '@/lib/auth/api-auth'
 
 export async function POST(
@@ -15,11 +15,18 @@ export async function POST(
     await connectDB()
     const { id } = await params
 
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Asset ID is required' },
+        { status: 400 }
+      )
+    }
+
     const asset = await Asset.findOne({ id })
 
     if (!asset) {
       return NextResponse.json(
-        { success: false, error: 'Asset not found' },
+        { success: false, error: `Asset with ID ${id} not found` },
         { status: 404 }
       )
     }
@@ -41,8 +48,9 @@ export async function POST(
     })
   } catch (error: unknown) {
     console.error('Error generating QR code:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { success: false, error: 'Failed to generate QR code' },
+      { success: false, error: `Failed to generate QR code: ${errorMessage}` },
       { status: 500 }
     )
   }
@@ -59,11 +67,18 @@ export async function GET(
     await connectDB()
     const { id } = await params
 
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Asset ID is required' },
+        { status: 400 }
+      )
+    }
+
     const asset = await Asset.findOne({ id }).select('id name qrCode').lean()
 
     if (!asset) {
       return NextResponse.json(
-        { success: false, error: 'Asset not found' },
+        { success: false, error: `Asset with ID ${id} not found` },
         { status: 404 }
       )
     }
@@ -72,7 +87,7 @@ export async function GET(
     let qrCode = asset.qrCode
     if (!qrCode) {
       qrCode = generateQRCodeData(id)
-      // Update asset with QR code
+      // Update asset with QR code (use updateOne for lean query result)
       await Asset.updateOne({ id }, { qrCode })
     }
 
@@ -86,8 +101,9 @@ export async function GET(
     })
   } catch (error: unknown) {
     console.error('Error fetching QR code:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch QR code' },
+      { success: false, error: `Failed to fetch QR code: ${errorMessage}` },
       { status: 500 }
     )
   }

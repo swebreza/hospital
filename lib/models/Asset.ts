@@ -73,9 +73,13 @@ const AssetSchema = new Schema<IAsset>(
     manufacturer: String,
     serialNumber: {
       type: String,
-      unique: true,
+      default: undefined, // Don't set default to empty string
       sparse: true,
-      index: true,
+      index: {
+        unique: true,
+        sparse: true,
+        partialFilterExpression: { serialNumber: { $exists: true, $ne: null, $ne: '' } },
+      },
     },
     department: {
       type: String,
@@ -195,13 +199,15 @@ AssetSchema.index({ isMinorAsset: 1, department: 1 })
 AssetSchema.index({ replacementRecommended: 1, criticality: 1 })
 
 // Pre-save hook to calculate age
-AssetSchema.pre('save', function (next) {
+AssetSchema.pre('save', function (next: (error?: Error) => void) {
   if (this.purchaseDate) {
     const ageInMs = Date.now() - new Date(this.purchaseDate).getTime()
     this.ageYears =
       Math.round((ageInMs / (1000 * 60 * 60 * 24 * 365)) * 100) / 100
   }
-  ;(next as (error?: Error) => void)()
+  if (typeof next === 'function') {
+    next()
+  }
 })
 
 const Asset =

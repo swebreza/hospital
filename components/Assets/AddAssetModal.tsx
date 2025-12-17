@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { X, Save } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useStore, Asset } from '@/lib/store'
+import { Asset } from '@/lib/types'
 import { toast } from 'sonner'
 import { assetsApi } from '@/lib/api/assets'
 
@@ -13,7 +13,6 @@ interface AddAssetModalProps {
 }
 
 export default function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
-  const { addAsset } = useStore()
   const [formData, setFormData] = useState({
     name: '',
     model: '',
@@ -70,7 +69,6 @@ export default function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
 
       const response = await assetsApi.create(assetData)
       if (response.success && response.data) {
-        addAsset(response.data)
         toast.success('New asset added successfully')
         onClose()
         setFormData({

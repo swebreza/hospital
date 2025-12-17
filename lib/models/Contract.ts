@@ -135,9 +135,7 @@ ContractSchema.methods.checkExpiryStatus = function () {
 ContractSchema.pre('save', function (next) {
   // Validate end date is after start date
   if (this.endDate <= this.startDate) {
-    return (next as (error?: Error) => void)(
-      new Error('End date must be after start date')
-    )
+    return next(new Error('End date must be after start date'))
   }
 
   // Auto-update status based on dates
@@ -153,7 +151,7 @@ ContractSchema.pre('save', function (next) {
     this.renewalDate = this.calculateRenewalDate()
   }
 
-  ;(next as (error?: Error) => void)()
+  next()
 })
 
 // Ensure virtuals are included in JSON output

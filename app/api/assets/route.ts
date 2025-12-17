@@ -5,7 +5,7 @@ import type { PaginatedResponse, Asset as IAsset, FilterOptions } from '@/lib/ty
 import { createAssetHistory } from '@/lib/services/assetHistory'
 import { calculateAssetAge } from '@/lib/services/lifecycleAnalysis'
 import { requireRole } from '@/lib/auth/api-auth'
-import { generateQRCodeData } from '@/lib/services/qrCode'
+import { generateQRCodeData } from '@/lib/services/qrCodeClient'
 
 export async function GET(request: NextRequest) {
   const authResult = await requireRole(['normal', 'full_access'])
@@ -154,14 +154,25 @@ export async function POST(request: NextRequest) {
     const qrCode = generateQRCodeData(body.id)
 
     // Create asset
-    const asset = new Asset({
+    // Handle serialNumber: only set if provided and not empty
+    const assetData: any = {
       ...body,
       qrCode,
       status: body.status || 'Active',
       lifecycleState: body.lifecycleState || 'Active',
       isMinorAsset: body.isMinorAsset || false,
       replacementRecommended: body.replacementRecommended || false,
-    })
+    }
+    
+    // Only include serialNumber if it has a value (to avoid null duplicates)
+    if (body.serialNumber && body.serialNumber.trim() !== '') {
+      assetData.serialNumber = body.serialNumber.trim()
+    } else {
+      // Explicitly set to undefined to exclude from document
+      delete assetData.serialNumber
+    }
+    
+    const asset = new Asset(assetData)
 
     await asset.save()
 
@@ -180,10 +191,30 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: unknown) {
     console.error('Error creating asset:', error)
-    const err = error as { message?: string; code?: number }
+    const err = error as { message?: string; code?: number; keyPattern?: Record<string, unknown>; keyValue?: Record<string, unknown> }
+    
+    // Handle MongoDB duplicate key errors
+    if (err.code === 11000) {
+      const duplicateField = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'field'
+      const duplicateValue = err.keyValue ? Object.values(err.keyValue)[0] : 'value'
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Asset with ${duplicateField} "${duplicateValue}" already exists. Please use a unique value.` 
+        },
+        { status: 409 } // Conflict
+      )
+    }
+    
+    // Validate status code is in valid range (200-599)
+    let statusCode = 500
+    if (err.code && err.code >= 200 && err.code <= 599) {
+      statusCode = err.code
+    }
+    
     return NextResponse.json(
       { success: false, error: err.message || 'Failed to create asset' },
-      { status: err.code || 500 }
+      { status: statusCode }
     )
   }
 }

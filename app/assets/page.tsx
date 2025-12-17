@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Grid, List, Plus, Upload, Download } from 'lucide-react'
-import { useStore } from '@/lib/store'
+import React, { useState, useEffect } from 'react'
+import { Grid, List, Plus, Upload, Download, Loader2 } from 'lucide-react'
 import AssetTable from '@/components/Assets/AssetTable'
 import AssetGridView from '@/components/Assets/AssetGridView'
 import AddAssetModal from '@/components/Assets/AddAssetModal'
@@ -14,6 +13,7 @@ import { Asset } from '@/lib/types'
 import { toast } from 'sonner'
 import EmptyState from '@/components/ui/EmptyState'
 import { Package } from 'lucide-react'
+import { assetsApi } from '@/lib/api/assets'
 
 export default function AssetsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -21,6 +21,11 @@ export default function AssetsPage() {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([])
   const [showExportMenu, setShowExportMenu] = useState(false)
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     status: '',
@@ -38,62 +43,47 @@ export default function AssetsPage() {
     replacementRecommended: '',
   })
 
-  const { assets } = useStore()
+  // Fetch assets from database
+  useEffect(() => {
+    fetchAssets()
+  }, [page, filters])
 
-  // Apply filters
-  const filteredAssets = assets.filter((asset) => {
-    if (
-      filters.search &&
-      !(
-        asset.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        asset.id.toLowerCase().includes(filters.search.toLowerCase()) ||
-        asset.serialNumber.toLowerCase().includes(filters.search.toLowerCase())
-      )
-    )
-      return false
+  const fetchAssets = async () => {
+    setLoading(true)
+    try {
+      const response = await assetsApi.getAll(page, 50, {
+        search: filters.search || undefined,
+        status: filters.status || undefined,
+        department: filters.department || undefined,
+        assetType: filters.assetType || undefined,
+        modality: filters.modality || undefined,
+        criticality: filters.criticality || undefined,
+        oem: filters.oem || undefined,
+        lifecycleState: filters.lifecycleState || undefined,
+        isMinorAsset: filters.isMinorAsset ? filters.isMinorAsset === 'true' : undefined,
+        farNumber: filters.farNumber || undefined,
+        replacementRecommended: filters.replacementRecommended ? filters.replacementRecommended === 'true' : undefined,
+      })
 
-    if (filters.status && asset.status !== filters.status) return false
-    if (filters.department && asset.department !== filters.department)
-      return false
-    if (
-      filters.manufacturer &&
-      asset.manufacturer.toLowerCase() !== filters.manufacturer.toLowerCase()
-    )
-      return false
-    if (filters.assetType && asset.assetType !== filters.assetType) return false
-    if (
-      filters.modality &&
-      asset.modality?.toLowerCase() !== filters.modality.toLowerCase()
-    )
-      return false
-    if (filters.criticality && asset.criticality !== filters.criticality)
-      return false
-    if (filters.oem && asset.oem?.toLowerCase() !== filters.oem.toLowerCase())
-      return false
-    if (
-      filters.lifecycleState &&
-      asset.lifecycleState !== filters.lifecycleState
-    )
-      return false
-    if (filters.isMinorAsset) {
-      const isMinor = filters.isMinorAsset === 'true'
-      if (asset.isMinorAsset !== isMinor) return false
+      if (response && response.data) {
+        setAssets(response.data)
+        setTotalPages(response.pagination?.totalPages || 1)
+        setTotal(response.pagination?.total || 0)
+      }
+    } catch (error: any) {
+      console.error('Error fetching assets:', error)
+      toast.error('Failed to load assets. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    if (
-      filters.farNumber &&
-      asset.farNumber?.toLowerCase() !== filters.farNumber.toLowerCase()
-    )
-      return false
-    if (filters.replacementRecommended) {
-      const shouldReplace = filters.replacementRecommended === 'true'
-      if (asset.replacementRecommended !== shouldReplace) return false
-    }
+  }
 
-    return true
-  })
+  // Assets are already filtered by the API, so we use them directly
+  const filteredAssets = assets
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters)
+    setPage(1) // Reset to first page when filters change
   }
 
   const handleFilterReset = () => {
@@ -399,7 +389,14 @@ export default function AssetsPage() {
       )}
 
       {/* Content */}
-      {filteredAssets.length === 0 ? (
+      {loading ? (
+        <div className='flex items-center justify-center py-12'>
+          <div className='text-center'>
+            <Loader2 size={32} className='animate-spin mx-auto mb-4 text-primary' />
+            <p className='text-text-secondary'>Loading assets...</p>
+          </div>
+        </div>
+      ) : filteredAssets.length === 0 ? (
         <EmptyState
           icon={Package}
           title='No assets found'
@@ -411,32 +408,69 @@ export default function AssetsPage() {
           actionLabel='Add New Asset'
           onAction={() => setIsAddModalOpen(true)}
         />
-      ) : viewMode === 'table' ? (
-        <AssetTable
-          assets={filteredAssets}
-          selectedAssets={selectedAssets}
-          onSelectionChange={setSelectedAssets}
-        />
       ) : (
-        <AssetGridView
-          assets={filteredAssets}
-          onAssetClick={() => {
-            // Open asset drawer - TODO: implement asset drawer
-          }}
-        />
+        <>
+          {viewMode === 'table' ? (
+            <AssetTable
+              assets={filteredAssets}
+              selectedAssets={selectedAssets}
+              onSelectionChange={setSelectedAssets}
+            />
+          ) : (
+            <AssetGridView
+              assets={filteredAssets}
+              onAssetClick={() => {
+                // Open asset drawer - TODO: implement asset drawer
+              }}
+            />
+          )}
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className='flex items-center justify-between mt-6 pt-4 border-t border-border'>
+              <p className='text-sm text-text-secondary'>
+                Showing {((page - 1) * 50) + 1} to {Math.min(page * 50, total)} of {total} assets
+              </p>
+              <div className='flex items-center gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <span className='text-sm text-text-secondary'>
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modals */}
       <AddAssetModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false)
+          fetchAssets() // Refresh assets after closing modal
+        }}
       />
       <BulkUploadModal
         isOpen={isBulkUploadModalOpen}
         onClose={() => setIsBulkUploadModalOpen(false)}
         onSuccess={() => {
           // Refresh assets list
-          window.location.reload()
+          fetchAssets()
         }}
       />
     </div>

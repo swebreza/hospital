@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react'
 import { Search, Filter, Eye, Trash2, QrCode } from 'lucide-react'
-import { useStore, Asset } from '@/lib/store'
+import { Asset } from '@/lib/types'
 import { toast } from 'sonner'
 import AssetDrawer from './AssetDrawer'
+import { assetsApi } from '@/lib/api/assets'
 
 interface AssetTableProps {
   assets?: Asset[]
@@ -20,10 +21,9 @@ export default function AssetTable(props: AssetTableProps = {}) {
   } = props
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
-  const { assets: storeAssets, deleteAsset } = useStore()
 
-  // Use props assets if provided, otherwise use store assets
-  const assets = propsAssets || storeAssets
+  // Use props assets (from database)
+  const assets = propsAssets || []
 
   // If props assets are provided, use them directly (parent handles filtering)
   // Otherwise, apply internal search filter
@@ -49,11 +49,18 @@ export default function AssetTable(props: AssetTableProps = {}) {
     }
   }
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (confirm('Are you sure you want to delete this asset?')) {
-      deleteAsset(id)
-      toast.success('Asset deleted successfully')
+      try {
+        await assetsApi.delete(id)
+        toast.success('Asset deleted successfully')
+        // Refresh the page to update the list
+        window.location.reload()
+      } catch (error: any) {
+        console.error('Error deleting asset:', error)
+        toast.error(error?.message || 'Failed to delete asset')
+      }
     }
   }
 

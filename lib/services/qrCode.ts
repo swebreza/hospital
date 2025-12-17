@@ -1,18 +1,11 @@
+// Server-only QR code utilities
+// This file should only be imported in server components or API routes
+
 import Asset from '@/lib/models/Asset'
 import AssetHistory from '@/lib/models/AssetHistory'
 import MEAChecklist from '@/lib/models/MEAChecklist'
 import Document from '@/lib/models/Document'
 import type { Asset as IAsset } from '@/lib/types'
-
-/**
- * Generate QR code data for an asset
- * Returns a URL-safe string that can be encoded in QR code
- */
-export function generateQRCodeData(assetId: string): string {
-  // Simple encoding: just the asset ID
-  // In production, you might want to encode more data or use a short URL
-  return `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/qr/${assetId}`
-}
 
 /**
  * Get comprehensive asset data for QR code scan
@@ -189,66 +182,6 @@ export async function getQRCodeAssetData(assetId: string): Promise<QRCodeAssetDa
   }
 }
 
-/**
- * Format QR code data for mobile display
- */
-export function formatQRDataForMobile(data: QRCodeAssetData): {
-  title: string
-  sections: Array<{
-    title: string
-    items: Array<{ label: string; value: string }>
-  }>
-  actions: Array<{ label: string; url: string }>
-} {
-  return {
-    title: data.asset.name,
-    sections: [
-      {
-        title: 'Asset Information',
-        items: [
-          { label: 'ID', value: data.asset.id },
-          { label: 'Model', value: data.asset.model || 'N/A' },
-          { label: 'Manufacturer', value: data.asset.manufacturer || 'N/A' },
-          { label: 'Department', value: data.asset.department },
-          { label: 'Location', value: data.asset.location || 'N/A' },
-          { label: 'Status', value: data.asset.status },
-        ],
-      },
-      {
-        title: 'Maintenance Status',
-        items: [
-          {
-            label: 'Next PM',
-            value: data.pmStatus.nextPmDate
-              ? `${new Date(data.pmStatus.nextPmDate).toLocaleDateString()} (${
-                  data.pmStatus.daysUntil !== null
-                    ? data.pmStatus.daysUntil < 0
-                      ? `${Math.abs(data.pmStatus.daysUntil)} days overdue`
-                      : `${data.pmStatus.daysUntil} days`
-                    : 'N/A'
-                })`
-              : 'Not scheduled',
-          },
-          {
-            label: 'Next Calibration',
-            value: data.calibrationStatus.nextCalibrationDate
-              ? `${new Date(data.calibrationStatus.nextCalibrationDate).toLocaleDateString()} (${
-                  data.calibrationStatus.daysUntil !== null
-                    ? data.calibrationStatus.daysUntil < 0
-                      ? `${Math.abs(data.calibrationStatus.daysUntil)} days overdue`
-                      : `${data.calibrationStatus.daysUntil} days`
-                    : 'N/A'
-                })`
-              : 'Not scheduled',
-          },
-        ],
-      },
-    ],
-    actions: [
-      { label: 'View Full Details', url: `/assets/${data.asset.id}` },
-      { label: 'Raise Complaint', url: `/complaints/new?assetId=${data.asset.id}` },
-      { label: 'View History', url: `/assets/${data.asset.id}?tab=history` },
-    ],
-  }
-}
+// Note: generateQRCodeData and formatQRDataForMobile are available in qrCodeClient.ts
+// for client components. This file is server-only due to Mongoose imports.
 

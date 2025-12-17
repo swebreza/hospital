@@ -66,8 +66,27 @@ export const assetsApi = {
   },
 
   // Generate QR code for asset
-  generateQR: async (id: string): Promise<ApiResponse<{ qrCode: string }>> => {
-    return apiPost<ApiResponse<{ qrCode: string }>>(`/assets/${id}/qr-code`)
+  generateQR: async (id: string): Promise<ApiResponse<{ qrCode: string; assetId: string; assetName: string }>> => {
+    // Try GET first (to fetch existing), then POST if needed
+    try {
+      const response = await apiGet<ApiResponse<{ qrCode: string; assetId: string; assetName: string }>>(`/assets/${id}/qr-code`)
+      // If QR code exists, return it
+      if (response && response.success && response.data?.qrCode) {
+        return response
+      }
+      // If no QR code, generate it with POST
+      return await apiPost<ApiResponse<{ qrCode: string; assetId: string; assetName: string }>>(`/assets/${id}/qr-code`, {})
+    } catch (error: any) {
+      // If GET fails (e.g., 404 or no QR code), try POST to generate
+      if (error?.status === 404 || error?.status === 500) {
+        try {
+          return await apiPost<ApiResponse<{ qrCode: string; assetId: string; assetName: string }>>(`/assets/${id}/qr-code`, {})
+        } catch (postError: any) {
+          throw new Error(postError?.message || 'Failed to generate QR code')
+        }
+      }
+      throw error
+    }
   },
 
   // Upload asset document

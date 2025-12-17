@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db/mongodb'
-import { getQRCodeAssetData, formatQRDataForMobile } from '@/lib/services/qrCode'
+import { getQRCodeAssetData } from '@/lib/services/qrCode'
+import { formatQRDataForMobile } from '@/lib/services/qrCodeClient'
 
 export async function GET(
   request: NextRequest,

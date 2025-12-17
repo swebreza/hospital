@@ -13,11 +13,28 @@ async function handleResponse<T>(response: Response): Promise<T> {
   const contentType = response.headers.get('content-type')
   const isJson = contentType?.includes('application/json')
 
-  const data = isJson ? await response.json() : await response.text()
+  let data: any
+  try {
+    data = isJson ? await response.json() : await response.text()
+  } catch (parseError) {
+    // If JSON parsing fails, use the response text
+    const text = await response.text()
+    throw new ApiError(
+      `Failed to parse response: ${text}`,
+      response.status,
+      text
+    )
+  }
 
   if (!response.ok) {
+    const errorMessage = 
+      (typeof data === 'object' && data?.error) ||
+      (typeof data === 'object' && data?.message) ||
+      (typeof data === 'string' && data) ||
+      `HTTP error! status: ${response.status}`
+    
     throw new ApiError(
-      data?.error || data?.message || `HTTP error! status: ${response.status}`,
+      errorMessage,
       response.status,
       data
     )

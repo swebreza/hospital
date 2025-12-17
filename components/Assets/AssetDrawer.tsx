@@ -313,9 +313,13 @@ export default function AssetDrawer({
                             const response = await assetsApi.generateQR(asset.id)
                             if (response.success && response.data) {
                               setQrCodeData(response.data.qrCode)
+                              toast.success('QR code generated successfully!')
+                            } else {
+                              toast.error(response.error || 'Failed to generate QR code')
                             }
-                          } catch (error) {
+                          } catch (error: any) {
                             console.error('Failed to generate QR code:', error)
+                            toast.error(error?.message || 'Failed to generate QR code. Please try again.')
                           } finally {
                             setLoadingQR(false)
                           }

@@ -3,7 +3,7 @@ import connectDB from '@/lib/db/mongodb'
 import Asset from '@/lib/models/Asset'
 import type { Asset as IAsset } from '@/lib/types'
 import { trackAssetUpdate } from '@/lib/services/assetHistory'
-import { generateQRCodeData } from '@/lib/services/qrCode'
+import { generateQRCodeData } from '@/lib/services/qrCodeClient'
 
 export async function GET(
   request: NextRequest,
