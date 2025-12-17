@@ -10,6 +10,7 @@ import { assetsApi } from '@/lib/api/assets'
 import type { AssetHistory } from '@/lib/types'
 import QRCodeGenerator from './QRCodeGenerator'
 import { toast } from 'sonner'
+import { generateQRCodeData } from '@/lib/services/qrCodeClient'
 
 interface AssetDrawerProps {
   isOpen: boolean
@@ -22,47 +23,37 @@ export default function AssetDrawer({
   onClose,
   asset,
 }: AssetDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'info' | 'history' | 'docs' | 'qr'>(
-    'info'
-  )
-  const [qrCodeData, setQrCodeData] = useState<string | null>(null)
-  const [loadingQR, setLoadingQR] = useState(false)
+  const [activeTab, setActiveTab] = useState<
+    'info' | 'history' | 'docs' | 'qr'
+  >('info')
   const [history, setHistory] = useState<AssetHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const loadedAssetIdRef = React.useRef<string | null>(null)
 
-  // Fetch QR code when QR tab is opened
+  // Generate QR code URL client-side only (after mount)
   useEffect(() => {
-    if (asset?.id && activeTab === 'qr' && !qrCodeData) {
-      setLoadingQR(true)
-      assetsApi
-        .generateQR(asset.id)
-        .then((response) => {
-          if (response.success && response.data) {
-            setQrCodeData(response.data.qrCode || asset.qrCode || null)
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to load QR code:', error)
-          // Fallback to asset.qrCode if available
-          setQrCodeData(asset.qrCode || null)
-        })
-        .finally(() => {
-          setLoadingQR(false)
-        })
-    } else if (asset?.qrCode && activeTab === 'qr' && !qrCodeData) {
-      setQrCodeData(asset.qrCode)
+    if (asset?.id && typeof window !== 'undefined') {
+      setQrCodeUrl(generateQRCodeData(asset.id))
+    } else {
+      setQrCodeUrl(null)
     }
-  }, [asset?.id, activeTab, qrCodeData, asset?.qrCode])
+  }, [asset?.id])
 
   useEffect(() => {
     // Only fetch if we have an asset ID, are on history tab, and haven't loaded this asset yet
-    if (asset?.id && activeTab === 'history' && asset.id !== loadedAssetIdRef.current) {
-      setLoadingHistory(true)
-      loadedAssetIdRef.current = asset.id
-      assetsApi
-        .getHistory(asset.id, { groupBy: 'timeline' })
-        .then((response) => {
+    if (
+      asset?.id &&
+      activeTab === 'history' &&
+      asset.id !== loadedAssetIdRef.current
+    ) {
+      const fetchHistory = async () => {
+        setLoadingHistory(true)
+        loadedAssetIdRef.current = asset.id
+        try {
+          const response = await assetsApi.getHistory(asset.id, {
+            groupBy: 'timeline',
+          })
           if (response.success && response.data) {
             if (Array.isArray(response.data)) {
               setHistory(response.data)
@@ -74,19 +65,23 @@ export default function AssetDrawer({
                   allHistory.push(...events)
                 }
               })
-              setHistory(allHistory.sort((a, b) => 
-                new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
-              ))
+              setHistory(
+                allHistory.sort(
+                  (a, b) =>
+                    new Date(b.eventDate).getTime() -
+                    new Date(a.eventDate).getTime()
+                )
+              )
             }
           }
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error('Failed to load history:', error)
           loadedAssetIdRef.current = null // Reset on error so we can retry
-        })
-        .finally(() => {
+        } finally {
           setLoadingHistory(false)
-        })
+        }
+      }
+      fetchHistory()
     } else if (!asset?.id || activeTab !== 'history') {
       // Clear history when switching tabs or closing drawer
       setHistory([])
@@ -146,7 +141,9 @@ export default function AssetDrawer({
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() =>
+                    setActiveTab(tab.id as 'info' | 'history' | 'docs' | 'qr')
+                  }
                   className={`flex items-center gap-2 py-4 px-4 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
@@ -234,7 +231,10 @@ export default function AssetDrawer({
                       <p className='text-text-secondary'>Loading history...</p>
                     </div>
                   ) : (
-                    <AssetHistoryTimeline history={history} groupByDate={true} />
+                    <AssetHistoryTimeline
+                      history={history}
+                      groupByDate={true}
+                    />
                   )}
                 </div>
               )}
@@ -250,15 +250,10 @@ export default function AssetDrawer({
 
               {activeTab === 'qr' && (
                 <div className='space-y-4'>
-                  {loadingQR ? (
-                    <div className='text-center py-8'>
-                      <div className='w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2' />
-                      <p className='text-text-secondary'>Loading QR code...</p>
-                    </div>
-                  ) : qrCodeData ? (
+                  {qrCodeUrl ? (
                     <div className='flex flex-col items-center'>
                       <QRCodeGenerator
-                        value={qrCodeData}
+                        value={asset.id}
                         assetName={asset.name}
                         size={250}
                         showDownload={true}
@@ -270,7 +265,7 @@ export default function AssetDrawer({
                         <div className='flex items-center gap-2'>
                           <input
                             type='text'
-                            value={qrCodeData}
+                            value={qrCodeUrl}
                             readOnly
                             className='flex-1 p-2 text-sm border border-border rounded-md bg-white font-mono text-xs'
                           />
@@ -278,7 +273,7 @@ export default function AssetDrawer({
                             variant='outline'
                             size='sm'
                             onClick={() => {
-                              navigator.clipboard.writeText(qrCodeData)
+                              navigator.clipboard.writeText(qrCodeUrl)
                               toast.success('QR code URL copied!')
                             }}
                           >
@@ -293,7 +288,7 @@ export default function AssetDrawer({
                         <Button
                           variant='outline'
                           onClick={() => {
-                            window.open(qrCodeData, '_blank')
+                            window.open(qrCodeUrl, '_blank')
                           }}
                         >
                           Open QR Page
@@ -305,28 +300,6 @@ export default function AssetDrawer({
                       <p className='text-text-secondary mb-4'>
                         QR code not available for this asset
                       </p>
-                      <Button
-                        variant='primary'
-                        onClick={async () => {
-                          setLoadingQR(true)
-                          try {
-                            const response = await assetsApi.generateQR(asset.id)
-                            if (response.success && response.data) {
-                              setQrCodeData(response.data.qrCode)
-                              toast.success('QR code generated successfully!')
-                            } else {
-                              toast.error(response.error || 'Failed to generate QR code')
-                            }
-                          } catch (error: any) {
-                            console.error('Failed to generate QR code:', error)
-                            toast.error(error?.message || 'Failed to generate QR code. Please try again.')
-                          } finally {
-                            setLoadingQR(false)
-                          }
-                        }}
-                      >
-                        Generate QR Code
-                      </Button>
                     </div>
                   )}
                 </div>
@@ -371,7 +344,6 @@ function InfoItem({
     </div>
   )
 }
-
 
 function DocItem({ name, size }: { name: string; size: string }) {
   return (
