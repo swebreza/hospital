@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
     const qrCode = generateQRCodeData(body.id)
 
     // Create asset
-    // Handle serialNumber: MULTI-LAYER CLEANING to prevent any null/empty values
+    // Handle serialNumber: COMPLETELY REMOVE if invalid (don't set to null/undefined)
     const assetData: Record<string, unknown> = {
       ...body,
       qrCode,
@@ -171,23 +171,33 @@ export async function POST(request: NextRequest) {
       const serialStr = String(body.serialNumber).trim()
       const lowerSerial = serialStr.toLowerCase()
       
-      // Reject: empty, "null", "undefined", whitespace-only
+      // Reject: empty, "null", "undefined", whitespace-only, placeholders
       if (serialStr !== '' && 
           lowerSerial !== 'null' && 
           lowerSerial !== 'undefined' &&
           lowerSerial !== 'none' &&
           lowerSerial !== 'n/a' &&
-          lowerSerial !== 'na') {
+          lowerSerial !== 'na' &&
+          lowerSerial !== 'nil') {
         cleanedSerialNumber = serialStr
       }
     }
     
-    // LAYER 2: Only include if we have a valid value
+    // LAYER 2: Only include if we have a valid value, otherwise COMPLETELY REMOVE
     if (cleanedSerialNumber) {
       assetData.serialNumber = cleanedSerialNumber
     } else {
-      // Explicitly remove to prevent any null/empty/undefined values
+      // CRITICAL: Completely remove from object (not undefined, not null - DELETE)
+      // This ensures Mongoose never sees the field and won't set it to null
       delete assetData.serialNumber
+    }
+    
+    // Log for debugging (remove in production if needed)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Asset data before Mongoose:', {
+        hasSerialNumber: 'serialNumber' in assetData,
+        serialNumberValue: assetData.serialNumber,
+      })
     }
     
     const asset = new Asset(assetData)

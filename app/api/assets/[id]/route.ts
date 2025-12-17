@@ -92,7 +92,7 @@ export async function PUT(
       )
     }
 
-    // Clean serialNumber before updating (same logic as POST)
+    // Clean serialNumber before updating - COMPLETELY REMOVE if invalid
     if (body.serialNumber !== undefined) {
       const serialStr = String(body.serialNumber).trim()
       const lowerSerial = serialStr.toLowerCase()
@@ -102,9 +102,11 @@ export async function PUT(
           lowerSerial === 'undefined' ||
           lowerSerial === 'none' ||
           lowerSerial === 'n/a' ||
-          lowerSerial === 'na') {
-        // Remove invalid serialNumber
-        body.serialNumber = undefined
+          lowerSerial === 'na' ||
+          lowerSerial === 'nil') {
+        // CRITICAL: Completely remove from body (not undefined, not null - DELETE)
+        // This ensures Mongoose uses $unset to remove the field
+        delete body.serialNumber
       } else {
         body.serialNumber = serialStr
       }

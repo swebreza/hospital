@@ -73,7 +73,7 @@ const AssetSchema = new Schema<IAsset>(
     manufacturer: String,
     serialNumber: {
       type: String,
-      default: undefined, // Don't set default to empty string
+      // No default - field should be completely omitted if not provided
       sparse: true,
       index: {
         unique: true,
@@ -199,14 +199,16 @@ AssetSchema.index({ isMinorAsset: 1, department: 1 })
 AssetSchema.index({ replacementRecommended: 1, criticality: 1 })
 
 // Pre-save hook to calculate age and clean serialNumber
-// This is the FINAL layer of defense - cleans serialNumber before saving to database
+// This is the FINAL layer of defense - completely removes serialNumber if invalid
 AssetSchema.pre('save', function (next: (error?: Error) => void) {
-  // COMPREHENSIVE serialNumber cleaning - catch all edge cases
+  // COMPREHENSIVE serialNumber cleaning - use $unset to completely remove field
+  let shouldUnset = false
+  
   if (this.serialNumber !== null && this.serialNumber !== undefined) {
     const serialStr = String(this.serialNumber).trim()
     const lowerSerial = serialStr.toLowerCase()
     
-    // Remove if empty or any placeholder value
+    // Check if value is invalid (empty or placeholder)
     if (serialStr === '' || 
         lowerSerial === 'null' || 
         lowerSerial === 'undefined' ||
@@ -214,14 +216,20 @@ AssetSchema.pre('save', function (next: (error?: Error) => void) {
         lowerSerial === 'n/a' ||
         lowerSerial === 'na' ||
         lowerSerial === 'nil') {
-      this.serialNumber = undefined
+      // Use $unset to completely remove the field (not set to null/undefined)
+      shouldUnset = true
     } else {
       // Keep valid serial number (trimmed)
       this.serialNumber = serialStr
     }
   } else {
-    // Explicitly set to undefined if null/undefined
-    this.serialNumber = undefined
+    // If null or undefined, completely remove the field
+    shouldUnset = true
+  }
+  
+  // Use $unset to completely remove field from document
+  if (shouldUnset) {
+    this.$unset('serialNumber')
   }
   
   // Calculate age
